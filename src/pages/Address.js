@@ -4,6 +4,8 @@ import { Helmet } from 'react-helmet';
 
 import { isAddress } from 'viem';
 import useFetchJson from '../components/useFetchJson.js';
+import CodeBlock from '../components/CodeBlock.js';
+
 
 export function Address() {
   const {address} = useParams();
@@ -21,21 +23,25 @@ export function Address() {
     }
   }
 
-  return (<div id="address">
+  return (<div id="address" className="p-6">
     <Helmet>
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {isValid ? (<>
-      <p>Hello, {address}</p>
+      <h2 className="text-2xl font-bold">{address}</h2>
       {loading ? <>
         <p>Loading verified contract source from Etherscan...</p>
       </> : error ? <>
         <p>Error loading verified contract source from Etherscan!</p>
       </> : verifiedSrc ? <>
-        <textarea
-          className="dark:bg-slate-800 dark:text-white"
-          value={verifiedSrc}
-        />
+        <div
+          className="line-numbers w-full h-96 bg-slate-100 dark:bg-slate-900 dark:text-white"
+        >
+          <CodeBlock
+            language="solidity"
+            code={verifiedSrc}
+          />
+        </div>
       </> : <>
         <p
           className=""

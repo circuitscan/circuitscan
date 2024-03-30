@@ -2,3 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+
+:root {
+  --prism-bg: #f5f2f0;
+  --prism-color: #000000;
+  --prism-text-shadow: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --prism-bg: #2d2d2d;
+    --prism-color: #ccc;
+    --prism-text-shadow: #000;
+  }
+}
+
+/* Prism.js styles */
+#address code[class*="language-"],
+#address pre[class*="language-"] {
+  background: var(--prism-bg);
+  color: var(--prism-color);
+  text-shadow: var(--prism-text-shadow);
+  /* Apply other variable-based styles */
+}
+
+#address code .token.operator {
+  background: none;
+}
+

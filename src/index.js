@@ -15,6 +15,9 @@ import { Router } from './Router.js';
 import DarkModeDetector from './components/DarkModeDetector.js';
 
 import './App.css';
+import 'prismjs/themes/prism.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const config = getDefaultConfig({

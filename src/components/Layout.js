@@ -5,11 +5,11 @@ export function Layout() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
   return (<>
-      <header>
+      <header className="flex justify-between p-6">
         <div className="">
-          <Link to="/"><h1>Circuitscan</h1></Link>
+          <Link to="/"><h1 className="text-3xl font-bold">Circuitscan</h1></Link>
         </div>
-        <div className="account">
+        <div className="">
           <ConnectButton />
         </div>
       </header>
