@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet';
 
 import { isAddress } from 'viem';
 import useFetchJson from '../components/useFetchJson.js';
+import useFetchPost from '../components/useFetchPost.js';
 import CodeBlock from '../components/CodeBlock.js';
 import UploadCode from '../components/UploadCode.js';
 
@@ -14,6 +15,7 @@ export function Address() {
   const bundleState = useState();
   const [params,setParams] = useState('');
   const [tpl,setTpl] = useState('');
+  const { post, data:postData, loading:postLoading, error:postError } = useFetchPost();
   // TODO cache the src to avoid api overages
   const {data, loading, error} = useFetchJson(isValid ? `https://api-holesky.etherscan.io/api?module=contract&action=getsourcecode&address=${address}&apikey=${import.meta.env.VITE_ETHERSCAN_API_KEY}` : null);
 
@@ -44,9 +46,20 @@ export function Address() {
     }
   }
 
+  if(postData) {
+    console.log(JSON.parse(postData.body));
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
-    console.log(bundleState[0], dataState[0], params, tpl);
+    post('/api', { payload: {
+      file: bundleState[0],
+      files: dataState[0],
+      params,
+      tpl,
+      protocol,
+      verifiedSrc,
+    }});
   }
 
   return (<div id="address" className="p-6">
@@ -104,9 +117,17 @@ export function Address() {
                   <span className="p-3 italic font-mono">{tplArgs[1]}</span>
                 </label>
               </div>}
-              <button
-                className="p-4 bg-slate-100 dark:bg-slate-900 dark:text-white rounded-md"
-              >Submit</button>
+              <div className="flex p-4 items-center">
+                <button
+                  className={`p-4 mr-4 bg-slate-100 dark:bg-slate-900 dark:text-white rounded-md
+                    hover:bg-slate-300 active:bg-slate-400
+                    dark:hover:bg-slate-800 dark:active:bg-slate-700
+                    `}
+                >Submit</button>
+                {postLoading ? <p>Loading...</p> :
+                  postError  ? <p>Error fetching result!</p> :
+                  postData   ? <p>Result success!</p> : null}
+              </div>
             </>}
           </form>}
         </div>

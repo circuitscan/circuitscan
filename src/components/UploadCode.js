@@ -72,6 +72,7 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
     reader.readAsText(file);
   };
 
+  // This filename has already been loaded, don't fall for circular refs!
   if(filename
     && inState
     && dataState[0][filename]

@@ -34,5 +34,5 @@ export function Router() {
 }
 
 function ErrorPage() {
-  return (<p>An error has occurred!</p>);
+  return (<p className="p-6">An error has occurred!</p>);
 }
