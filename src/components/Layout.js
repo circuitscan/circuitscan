@@ -1,4 +1,3 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Outlet, Link, useLocation } from "react-router-dom";
 
 export function Layout() {
@@ -10,7 +9,6 @@ export function Layout() {
           <Link to="/"><h1 className="text-3xl font-bold">Circuitscan</h1></Link>
         </div>
         <div className="">
-          <ConnectButton />
         </div>
       </header>
       <Outlet />

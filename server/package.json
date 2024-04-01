@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "circomkit": "^0.0.24"
+    "@aws-sdk/client-dynamodb": "^3.540.0",
+    "circomkit": "^0.0.24",
+    "diff": "5.2.0",
+    "viem": "2.x"
   }
 }

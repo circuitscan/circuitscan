@@ -7,6 +7,8 @@ export function Home() {
     <Helmet>
       <title>Circuitscan - Home</title>
     </Helmet>
-    <p className="text-3xl font-bold underline">Hello, world</p>
+    <div className="p-6">
+      <p><Link to="/address/0xf6359f2f29044b308518529776b906fc47060729">multiplier(3) fflonk exact match</Link></p>
+    </div>
   </div>);
 }

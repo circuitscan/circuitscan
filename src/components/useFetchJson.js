@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react';
-// From ChatGPT
+import { useState, useEffect, useRef } from 'react';
 
-const useFetchJson = (url) => {
+export default function useFetchJson(url, body) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Development docker server can only handle one request at a time
+  // Also, it's good practice for prod too
+  const requestSent = useRef(false);
+
   useEffect(() => {
+    if (requestSent.current) {
+      return;
+    }
+
     const fetchData = async () => {
       if(!url) {
         setData(null);
@@ -15,7 +22,13 @@ const useFetchJson = (url) => {
         return;
       }
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, body ? {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        } : undefined);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -28,11 +41,10 @@ const useFetchJson = (url) => {
       }
     };
 
+    requestSent.current = true;
     fetchData();
-  }, [url]); // Dependencies array with the URL, so it refetches when the URL changes
+  }, []);
 
   return { data, loading, error };
 };
-
-export default useFetchJson;
 

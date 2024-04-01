@@ -8,6 +8,7 @@ RUN npm install
 # Set the CMD to your handler
 CMD ["index.handler"]
 
+# TODO support every circom version (well >=2 since that's what has github releases)
 # Download the executable
 RUN curl -Lo /tmp/circom https://github.com/iden3/circom/releases/latest/download/circom-linux-amd64
 
