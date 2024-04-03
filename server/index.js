@@ -115,6 +115,7 @@ async function getVerified(event) {
   }
 }
 
+// TODO file operations must go in /tmp on AWS
 // TODO ddos protection!
 async function verify(event) {
   const verified = await getVerified(event);
