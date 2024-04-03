@@ -11,13 +11,20 @@
 
 ## Installation
 
-> Requires Node.js, Yarn, and Docker
+> Requires Node.js, Yarn, and Docker (for local server)
 
 ```
 $ git clone https://github.com/numtel/circuitscan
 $ cd circuitscan
 $ yarn
 
+# In another terminal, start frontend dev server
+$ yarn dev
+```
+
+### Local Server
+
+```
 # Build server lambda docker image
 $ yarn build:server
 
@@ -27,10 +34,9 @@ $ ed .env
 
 # Run server lambda in docker container
 $ yarn dev:server
-
-# In another terminal, start frontend dev server
-$ yarn dev
 ```
+
+Finally, update the `API_URL` to `/api` in [`src/pages/Address.js`](src/pages/Address.js)
 
 ## License
 

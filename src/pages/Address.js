@@ -12,6 +12,9 @@ import UploadCode from '../components/UploadCode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import Card from '../components/Card.js';
 
+// Local or deployed
+// const API_URL = '/api';
+const API_URL = 'https://e7osscyofflzknrcyvd6wj7qvm0qbjez.lambda-url.us-west-2.on.aws/';
 const INPUT_CLASS = `
   p-3
   bg-slate-100 dark:bg-slate-900
@@ -25,7 +28,7 @@ export function Address() {
   const darkMode = useDarkMode();
   const {address} = useParams();
   const isValid = isAddress(address);
-  const {data, loading, error, setData} = useFetchJson(isValid ? `/api` : null, {
+  const {data, loading, error, setData} = useFetchJson(isValid ? API_URL : null, {
     payload: {
       action: 'get-status',
       address,
@@ -62,12 +65,18 @@ export function Address() {
 
   let parsedData;
   if(data) {
-    parsedData = JSON.parse(data.body);
+    if(typeof data === 'string' || 'payload' in data) {
+      // Different format for function URL on AWS
+      parsedData = data;
+      console.log(data);
+    } else {
+      parsedData = JSON.parse(data.body);
+    }
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const result = await post('/api', { payload: {
+    const result = await post(API_URL, { payload: {
       action: 'verify',
       file: bundleState[0],
       files: dataState[0],
@@ -78,9 +87,6 @@ export function Address() {
       chainId: 17000,
     }});
     setData(result);
-
-    // XXX: useful for now
-    console.log(JSON.parse(result.body));
   }
 
   return (<div id="address" className="p-6">
@@ -104,11 +110,7 @@ export function Address() {
         <p>Loading verified contract source from Etherscan...</p>
       </> : error ? <>
         <p>Error loading verified contract source from Etherscan!</p>
-      </> : data && data.statusCode === 404 ? <>
-        <div className="">
-          This contract has not been verified on Etherscan.
-        </div>
-      </> : data && data.statusCode === 200 && typeof parsedData === 'string' ? <>
+      </> : data && typeof parsedData === 'string' ? <>
         <div className="">
           This contract has been verified on Etherscan but the circuit has not yet been verified here.
         </div>
@@ -118,7 +120,7 @@ export function Address() {
             language="solidity"
           />
         </Card>
-      </> : data && data.statusCode === 200 ? <>
+      </> : data ? <>
         <div className="">
           <div className="flex">
             {parsedData.acceptableDiff ? <>

@@ -14,5 +14,10 @@ export function Home() {
       <li><Link to="/address/0x76e83a791975fba6b86fbb44221857def11ff6bb">multiplier(3) plonk whitespace,  hardhat import missing, different contract name</Link></li>
       <li><Link to="/address/0x776Da74251Ea5f609354feE4F40C71fEc1a54926">lessthan(4) plonk whitespace,  hardhat import missing</Link></li>
     </ul>
+    <p className="p-6">
+      <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
+        View Github Repo
+      </a>
+    </p>
   </div>);
 }

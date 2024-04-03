@@ -12,6 +12,10 @@ const db = new DynamoDBClient({ region: "us-west-2" });
 const TableName = 'circuitscan1';
 
 export async function handler(event) {
+  if('body' in event) {
+    // Running on AWS
+    event = JSON.parse(event.body);
+  }
   switch(event.payload.action) {
     case 'get-status':
       return getStatus(event);
