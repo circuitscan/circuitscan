@@ -4,6 +4,11 @@
 
 *Vitalik Buterin March 26, 2024* [Source](https://www.defideveloper.news/vitalik-ethtaipei-interview/)
 
+## TODO
+
+- [ ] support more than just holesky
+- [ ] support more than just latest circom version
+
 ## Installation
 
 > Requires Node.js, Yarn, and Docker

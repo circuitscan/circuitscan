@@ -80,7 +80,7 @@ export function Address() {
     setData(result);
 
     // XXX: useful for now
-    console.log(result);
+    console.log(JSON.parse(result.body));
   }
 
   return (<div id="address" className="p-6">
@@ -166,8 +166,8 @@ export function Address() {
           </Card>
 
           {Object.keys(parsedData.payload.files)
-            .filter(x => x !== parsedData.payload.file).map(file => <>
-              <Card>
+            .filter(x => x !== parsedData.payload.file).map((file, index) => <>
+              <Card key={index}>
                 <h3 className="text-xl font-bold">{file}</h3>
                 <CodeBlock
                   code={parsedData.payload.files[file].code}
