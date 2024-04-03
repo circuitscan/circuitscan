@@ -45,6 +45,6 @@ export default function useFetchJson(url, body) {
     fetchData();
   }, []);
 
-  return { data, loading, error };
+  return { data, loading, error, setData };
 };
 

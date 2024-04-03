@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { Router } from './Router.js';
-import DarkModeDetector from './components/DarkModeDetector.js';
 
 import './App.css';
 import 'prismjs/themes/prism.css';

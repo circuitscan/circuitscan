@@ -5,21 +5,29 @@ import {isAddress} from 'viem';
 import {DynamoDBClient, PutItemCommand, GetItemCommand} from '@aws-sdk/client-dynamodb';
 
 const BUILD_NAME = 'verify_circuit';
+const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
+const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
 
 const db = new DynamoDBClient({ region: "us-west-2" });
 const TableName = 'circuitscan1';
 
 export async function handler(event) {
   switch(event.payload.action) {
-    case 'contract-source':
-      return contractSource(event);
-    case 'get-verified':
-      return getVerified(event);
+    case 'get-status':
+      return getStatus(event);
     case 'verify':
       return verify(event);
     default:
       throw new Error('invalid_command');
   }
+}
+
+async function getStatus(event) {
+  const verified = await getVerified(event);
+  if(verified) return verified;
+
+  const ogSource = await contractSource(event);
+  return ogSource;
 }
 
 async function contractSource(event) {
@@ -103,6 +111,7 @@ async function getVerified(event) {
   }
 }
 
+// TODO ddos protection!
 async function verify(event) {
   const verified = await getVerified(event);
   if(verified) return verified;
@@ -152,14 +161,61 @@ async function verify(event) {
   const contract = readFileSync(contractPath, {encoding: 'utf8'});
 
   const diff = diffTrimmedLines(JSON.parse(ogSource.body), contract);
+
+  let acceptableDiff = true;
+  let lastRemoved = null;
+  for(let i = 0; i < diff.length; i++) {
+    if(diff[i].removed) {
+      if(lastRemoved !== null) {
+        // Changes acceptableDiff below
+        console.log('removed_after_another_removal', i);
+        break;
+      }
+      lastRemoved = i;
+    } else if(lastRemoved === null
+      && diff[i].added
+      // XXX: plonk output has an errant hardhat debug include?
+      // Accept the verified source if this is removed
+      && diff[i].value.trim() !== 'import "hardhat/console.sol";'
+    ) {
+      // Otherise, anything else added is invalid
+      console.log('invalid_addition', i);
+      acceptableDiff = false;
+      break;
+    } else if(lastRemoved === i - 1 && diff[i].added) {
+      lastRemoved = null;
+      // Allow only whitespace differences
+      if(diff[i-1].value.trim() !== diff[i].value.trim()
+        // TODO allow for contract name changes?
+        && !(diff[i-1].value.match(CONTRACT_DEF_REGEX)
+          && diff[i].value.match(CONTRACT_DEF_REGEX))
+        && !(diff[i-1].value.match(GROTH16_ENTROPY_REGEX)
+          && diff[i].value.match(GROTH16_ENTROPY_REGEX))
+      ) {
+        acceptableDiff = false;
+        console.log('invalid_change', i);
+        break;
+      }
+    } else if(lastRemoved !== null && diff[i].added) {
+      acceptableDiff = false;
+      console.log('invalid_removal', i);
+      break;
+    }
+  }
+  if(lastRemoved !== null) {
+    console.log('invalid_unbalanced_removal', lastRemoved)
+    acceptableDiff = false;
+  }
+
   const body = JSON.stringify({
     payload: event.payload,
     contract,
     ogSource: JSON.parse(ogSource.body),
     diff,
+    acceptableDiff,
   });
 
-  if(diff.length === 1) {
+  if(acceptableDiff) {
     await db.send(new PutItemCommand({
       TableName,
       Item: {

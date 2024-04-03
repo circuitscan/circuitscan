@@ -11,6 +11,7 @@ const useFetchPost = () => {
 
     // useCallback ensures that the function isn't recreated on every render
     const post = useCallback(async (url, body) => {
+        let data;
         setLoading(true); // Begin loading state
         setError(null); // Reset error state
         try {
@@ -24,13 +25,14 @@ const useFetchPost = () => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            const data = await response.json(); // Parse JSON response
+            data = await response.json(); // Parse JSON response
             setData(data); // Update state with the fetched data
         } catch (error) {
             setError(error.message); // If an error occurs, set the error state
         } finally {
             setLoading(false); // End loading state
         }
+        return data;
     }, []); // Empty dependency array means this callback never changes
 
     // Return the post function and state
