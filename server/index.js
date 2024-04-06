@@ -155,6 +155,7 @@ async function verify(event) {
     file: event.payload.file.replace('.circom', ''),
     template: event.payload.tpl,
     params: JSON.parse(`[${event.payload.params}]`),
+    pubs: event.payload.pubs.split(',').map(x=>x.trim()).filter(x=>!!x),
   });
 
   await circomkit.setup(BUILD_NAME);

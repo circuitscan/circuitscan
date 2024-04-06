@@ -11,15 +11,20 @@
 - [ ] ddos protection!
 - [ ] allow for contract name changes?
 - [ ] form for submitting a proof to be verified
+- [ ] form for compiling and deploying a circuit
 
 ## Installation
 
-> Requires Node.js, Yarn, and Docker (for local server)
+> [!NOTE]
+> Requires Node.js, Yarn, and Docker (if you want to run server locally)
 
 ```
 $ git clone https://github.com/numtel/circuitscan
 $ cd circuitscan
 $ yarn
+
+# Default env var settings are fine for using remote deployed server
+$ cp .env.example .env
 
 # In another terminal, start frontend dev server
 $ yarn dev
@@ -28,18 +33,16 @@ $ yarn dev
 ### Local Server
 
 ```
+# Configure Etherscan, AWS DynamoDB
+# And update the `VITE_API_URL` to `/api` in your `.env` file
+$ vim .env
+
 # Build server lambda docker image
 $ yarn build:server
-
-# Configure Etherscan, AWS DynamoDB
-$ cp .env.example .env
-$ ed .env
 
 # Run server lambda in docker container
 $ yarn dev:server
 ```
-
-Finally, update the `API_URL` to `/api` in [`src/pages/Address.js`](src/pages/Address.js)
 
 ## License
 

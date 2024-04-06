@@ -13,8 +13,8 @@ import CodeBlock from '../components/CodeBlock.js';
 import Card from '../components/Card.js';
 
 // Local or deployed
-// const API_URL = '/api';
-const API_URL = 'https://e7osscyofflzknrcyvd6wj7qvm0qbjez.lambda-url.us-west-2.on.aws/';
+const API_URL = '/api';
+// const API_URL = '';
 const INPUT_CLASS = `
   p-3
   bg-slate-100 dark:bg-slate-900
@@ -28,18 +28,22 @@ export function Address() {
   const darkMode = useDarkMode();
   const {address} = useParams();
   const isValid = isAddress(address);
-  const {data, loading, error, setData} = useFetchJson(isValid ? API_URL : null, {
-    payload: {
-      action: 'get-status',
-      address,
+  const {data, loading, error, setData} = useFetchJson(
+    isValid ? import.meta.env.VITE_API_URL : null,
+    {
+      payload: {
+        action: 'get-status',
+        address,
+      },
     },
-  });
+  );
 
   const dataState = useState({});
   const bundleState = useState();
 
   const [tpl, setTpl] = useState('');
   const [params, setParams] = useState('');
+  const [pubs, setPubs] = useState('');
   const [protocol, setProtocol] = useState('groth16');
 
   const {post, data:postData, loading:postLoading, error:postError} = useFetchPost();
@@ -68,7 +72,6 @@ export function Address() {
     if(typeof data === 'string' || 'payload' in data) {
       // Different format for function URL on AWS
       parsedData = data;
-      console.log(data);
     } else {
       parsedData = JSON.parse(data.body);
     }
@@ -76,11 +79,12 @@ export function Address() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const result = await post(API_URL, { payload: {
+    const result = await post(import.meta.env.VITE_API_URL, { payload: {
       action: 'verify',
       file: bundleState[0],
       files: dataState[0],
       params,
+      pubs,
       tpl,
       protocol,
       address,
@@ -107,9 +111,9 @@ export function Address() {
         </a>
       </h2>
       {loading ? <>
-        <p>Loading verified contract source from Etherscan...</p>
+        <p>Loading contract data...</p>
       </> : error ? <>
-        <p>Error loading verified contract source from Etherscan!</p>
+        <p>Error loading contract data!</p>
       </> : data && typeof parsedData === 'string' ? <>
         <div className="">
           This contract has been verified on Etherscan but the circuit has not yet been verified here.
@@ -156,6 +160,8 @@ export function Address() {
               <dd className="pl-6">{parsedData.payload.tpl}</dd>
               <dt className="text-l font-bold">Params</dt>
               <dd className="pl-6">{parsedData.payload.params}</dd>
+              <dt className="text-l font-bold">Pubs</dt>
+              <dd className="pl-6">{parsedData.payload.pubs || <span className="italic">None</span>}</dd>
             </dl>
           </Card>
 
@@ -227,6 +233,17 @@ export function Address() {
                   <span className="p-3 italic font-mono">{tplArgs[1]}</span>
                 </label>
               </div>}
+              <div>
+                <label className="m-4 flex">
+                  <span className="p-3">Pubs:</span>
+                  <input
+                    value={pubs}
+                    onChange={(e) => setPubs(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                  <span className="p-3 italic">Comma separated</span>
+                </label>
+              </div>
               <div className="flex p-4 items-center">
                 <button
                   className={`p-4 mr-4 bg-slate-100 dark:bg-slate-900 dark:text-white rounded-md
@@ -237,7 +254,7 @@ export function Address() {
                 >Submit</button>
                 {postLoading ? <p>Loading...</p> :
                   postError  ? <p>Error fetching result!</p> :
-                  postData   ? <p>Result success!</p> : null}
+                  postData   ? <p>Process completed.</p> : null}
               </div>
             </>}
             </form>
