@@ -1,4 +1,6 @@
-import {readFileSync, writeFileSync, mkdirSync, rmdirSync} from 'node:fs';
+import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {Circomkit} from 'circomkit';
 import {diffTrimmedLines} from 'diff';
 import {isAddress} from 'viem';
@@ -115,7 +117,6 @@ async function getVerified(event) {
   }
 }
 
-// TODO file operations must go in /tmp on AWS
 // TODO ddos protection!
 async function verify(event) {
   const verified = await getVerified(event);
@@ -124,12 +125,7 @@ async function verify(event) {
   const ogSource = await contractSource(event);
   if(ogSource.statusCode !== 200) return ogSource;
 
-  try {
-    rmdirSync('circuits', { recursive: true });
-  } catch(error) {
-    // No worries, nothing to delete on first run
-  }
-  mkdirSync('circuits');
+  const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
   for(let file of Object.keys(event.payload.files)) {
     let code = event.payload.files[file].code;
     const imports = Array.from(code.matchAll(/include "([^"]+)";/g));
@@ -137,18 +133,19 @@ async function verify(event) {
       const filename = include[1].split('/').at(-1);
       code = code.replaceAll(include[0], `include "${filename}";`);
     }
-    writeFileSync(`circuits/${file}`, code);
+    writeFileSync(join(dirCircuits, file), code);
   }
 
   const config = {
-    "protocol": event.payload.protocol,
+    dirCircuits,
+    protocol: event.payload.protocol,
   };
 
   if(config.protocol === 'groth16') {
     Object.assign(config, {
-      "prime": "bn128",
-      "groth16numContributions": 1,
-      "groth16askForEntropy": false,
+      prime: 'bn128',
+      groth16numContributions: 1,
+      groth16askForEntropy: false,
     });
   }
 

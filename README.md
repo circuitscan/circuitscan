@@ -8,7 +8,6 @@
 
 - [ ] support more than just holesky
 - [ ] support more than just latest circom version
-- [ ] file operations must go in /tmp on AWS (i.e. Submissions only work with local docker atm)
 - [ ] ddos protection!
 - [ ] allow for contract name changes?
 - [ ] form for submitting a proof to be verified
