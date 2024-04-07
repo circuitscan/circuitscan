@@ -7,6 +7,8 @@ import {isAddress} from 'viem';
 import {holesky, sepolia} from 'viem/chains';
 import {DynamoDBClient, PutItemCommand, GetItemCommand} from '@aws-sdk/client-dynamodb';
 
+import { compileSolidityContract } from './solc.js';
+
 const BUILD_NAME = 'verify_circuit';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
@@ -20,7 +22,7 @@ const chains = [
     apiUrl: 'https://api-holesky.etherscan.io/api',
     apiKey: process.env.ETHERSCAN_API_KEY
   },
-  {
+{
     chain: sepolia,
     apiUrl: 'https://api-sepolia.etherscan.io/api',
     apiKey: process.env.ETHERSCAN_API_KEY
@@ -37,6 +39,8 @@ export async function handler(event) {
       return getStatus(event);
     case 'verify':
       return verify(event);
+    case 'build':
+      return build(event);
     default:
       throw new Error('invalid_command');
   }
@@ -144,15 +148,7 @@ async function getVerified(event) {
   }
 }
 
-// TODO ddos protection!
-async function verify(event) {
-  const verified = await getVerified(event);
-  if(verified) return verified;
-
-  const ogSource = await contractSource(event);
-  if(ogSource.statusCode !== 200) return ogSource;
-  const ogObj = JSON.parse(ogSource.body);
-
+async function build(event, returnDirect) {
   const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
   for(let file of Object.keys(event.payload.files)) {
     let code = event.payload.files[file].code;
@@ -189,8 +185,30 @@ async function verify(event) {
   await circomkit.setup(BUILD_NAME);
   await circomkit.vkey(BUILD_NAME);
   const contractPath = await circomkit.contract(BUILD_NAME);
-  const contract = readFileSync(contractPath, {encoding: 'utf8'});
+  const solidityCode = readFileSync(contractPath, {encoding: 'utf8'});
+  if(returnDirect) return solidityCode;
 
+  const compiled = await compileSolidityContract(contractPath);
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      solidityCode,
+      compiled,
+    }),
+  };
+}
+
+// TODO ddos protection!
+async function verify(event) {
+  const verified = await getVerified(event);
+  if(verified) return verified;
+
+  const ogSource = await contractSource(event);
+  if(ogSource.statusCode !== 200) return ogSource;
+  const ogObj = JSON.parse(ogSource.body);
+
+
+  const contract = await build(event, true);
   const diff = diffTrimmedLines(ogObj.code, contract);
 
   let acceptableDiff = true;

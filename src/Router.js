@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate, useParams } from "react-
 import { Layout } from './components/Layout.js';
 import { Home } from './pages/Home.js';
 import { Address } from './pages/Address.js';
+import { Deploy } from './pages/Deploy.js';
 
 export function Router() {
   const router = createBrowserRouter([
@@ -18,6 +19,10 @@ export function Router() {
             {
               path: "address/:address",
               element: <Address />,
+            },
+            {
+              path: "deploy",
+              element: <Deploy />,
             },
             {
               path: "*",

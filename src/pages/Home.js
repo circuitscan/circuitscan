@@ -1,11 +1,26 @@
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { CodeBracketSquareIcon, PaperAirplaneIcon } from '@heroicons/react/24/solid';
+
+import Card from '../components/Card.js';
+import {clsButton} from '../components/Layout.js';
 
 export function Home() {
   return (<div id="home">
     <Helmet>
       <title>Circuitscan - Home</title>
     </Helmet>
+    <p className="p-6">
+      <Link to="/deploy">
+        <button className={clsButton}>
+          <PaperAirplaneIcon className="h-9 w-9 text-red-500" />
+          Deploy Circuit
+        </button>
+      </Link>
+    </p>
+    <p className="p-6">
+      This beta version supports Sepolia and Holesky
+    </p>
     <h3 className="text-xl p-6 pb-0">Example circuits</h3>
     <ul className="p-6 pl-9 list-disc">
       <li><Link to="/address/0xda66ad5da2619054d890c359cb22601b104ac662">multiplier(3) groth16</Link></li>
@@ -18,12 +33,17 @@ export function Home() {
     </ul>
     <p className="p-6">
       <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
-        View Github Repo
+        <button className={clsButton}>
+          <CodeBracketSquareIcon className="h-9 w-9 text-blue-500" />
+          View Github Repo
+        </button>
       </a>
     </p>
-    <h3 className="text-xl p-6 pb-0">Why do Groth16 circuits always mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
-    <p className="p-6">
-      These values correspond to the entropy used during compilation. This process does not attempt to recreate these settings.
-    </p>
+    <Card>
+      <h3 className="text-xl p-6 pb-0">Why do Groth16 circuits always mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
+      <p className="p-6">
+        These values correspond to the entropy used during compilation. This process does not attempt to recreate these settings.
+      </p>
+    </Card>
   </div>);
 }

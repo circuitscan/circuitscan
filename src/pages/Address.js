@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { toast } from 'react-hot-toast';
 import ReactDiffViewer from 'react-diff-viewer';
 import { isAddress } from 'viem';
 import * as chains from 'viem/chains';
@@ -9,17 +10,9 @@ import { ArrowTopRightOnSquareIcon, CheckIcon, XMarkIcon } from '@heroicons/reac
 import useFetchJson from '../components/useFetchJson.js';
 import useFetchPost from '../components/useFetchPost.js';
 import useDarkMode from '../components/useDarkMode.js';
-import UploadCode from '../components/UploadCode.js';
 import CodeBlock from '../components/CodeBlock.js';
+import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
-
-const INPUT_CLASS = `
-  p-3
-  bg-slate-100 dark:bg-slate-900
-  dark:text-white
-  border border-zinc-300 dark:border-zinc-600
-  rounded-md
-`;
 
 // TODO form for submitting a proof to be verified
 export function Address() {
@@ -36,34 +29,18 @@ export function Address() {
     },
   );
 
-  const dataState = useState({});
-  const bundleState = useState();
-
-  const [tpl, setTpl] = useState('');
-  const [params, setParams] = useState('');
-  const [pubs, setPubs] = useState('');
-  const [protocol, setProtocol] = useState('groth16');
-
-  const {post, data:postData, loading:postLoading, error:postError} = useFetchPost();
-
+  const {
+    post,
+    data: postData,
+    loading: postLoading,
+    error: postError,
+  } = useFetchPost();
   useEffect(() => {
-    if(bundleState[0]) {
-      // Dependency tree has been filled, continue to form
-      setTpl(dataState[0][bundleState[0]].templates[0]);
+    if(postError) {
+      toast.dismiss();
+      toast.error('Verification error!');
     }
-  }, [bundleState[0]]);
-  
-  let tplArgs, validBundle;
-  if(bundleState[0] && tpl) {
-    validBundle = bundleState[0] in dataState[0];
-    if(!validBundle) {
-      bundleState[1](false);
-    } else {
-      tplArgs = dataState[0][bundleState[0]].code.match(
-        new RegExp(`template\\s+${tpl}\\((.*?)\\)\\s*\\{`)
-      );
-    }
-  }
+  }, [ postError ]);
 
   let parsedData, deployedChain;
   if(data) {
@@ -79,18 +56,15 @@ export function Address() {
   }
 
   async function handleSubmit(event) {
-    event.preventDefault();
+    toast.loading('Processing verification...');
     const result = await post(import.meta.env.VITE_API_URL, { payload: {
+      ...event,
       action: 'verify',
-      file: bundleState[0],
-      files: dataState[0],
-      params,
-      pubs,
-      tpl,
-      protocol,
       address,
     }});
     setData(result);
+    toast.dismiss();
+    window.scrollTo(0,0);
   }
 
   return (<div id="address" className="p-6">
@@ -98,7 +72,7 @@ export function Address() {
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {isValid ? (<>
-      <h2 className="text-2xl font-bold">
+      <h2 className="text-2xl text-ellipsis overflow-hidden mb-3 font-bold">
         {address}&nbsp;
         {deployedChain && <a
           href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
@@ -193,75 +167,9 @@ export function Address() {
 
       {(parsedData && ('code' in parsedData || !parsedData.acceptableDiff)) &&
         <Card>
-          <form onSubmit={handleSubmit}>
-            <h3 className="text-xl font-bold mb-8">To verify circuit, select Circom source file...</h3>
-            <UploadCode {...{dataState, bundleState}} />
-            {bundleState[0] && <>
-              <div>
-                <label className="m-4 flex">
-                  <span className="p-3">Protocol:</span>
-                  <select
-                    value={protocol}
-                    onChange={(e) => setProtocol(e.target.value)}
-                    className={INPUT_CLASS}
-                  >
-                    <option>groth16</option>
-                    <option>plonk</option>
-                    <option>fflonk</option>
-                  </select>
-                </label>
-              </div>
-              <div>
-                <label className="m-4 flex">
-                  <span className="p-3">Template:</span>
-                  <select
-                    value={tpl}
-                    onChange={(e) => setTpl(e.target.value)}
-                    className={INPUT_CLASS}
-                  >
-                    {validBundle && dataState[0][bundleState[0]].templates.map((tpl, index) =>
-                      <option key={index}>{tpl}</option>
-                    )}
-                  </select>
-                </label>
-              </div>
-              {tplArgs && tplArgs[1] && <div>
-                <label className="m-4 flex">
-                  <span className="p-3">Params:</span>
-                  <input
-                    value={params}
-                    onChange={(e) => setParams(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                  <span className="p-3 italic font-mono">{tplArgs[1]}</span>
-                </label>
-              </div>}
-              <div>
-                <label className="m-4 flex">
-                  <span className="p-3">Pubs:</span>
-                  <input
-                    value={pubs}
-                    onChange={(e) => setPubs(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                  <span className="p-3 italic">Comma separated</span>
-                </label>
-              </div>
-              <div className="flex p-4 items-center">
-                <button
-                  className={`p-4 mr-4 bg-slate-100 dark:bg-slate-900 dark:text-white rounded-md
-                    hover:bg-slate-300 active:bg-slate-400
-                    dark:hover:bg-slate-800 dark:active:bg-slate-700
-                    border border-zinc-300 dark:border-zinc-600
-                    `}
-                >Submit</button>
-                {postLoading ? <p>Loading...</p> :
-                  postError  ? <p>Error fetching result!</p> :
-                  postData   ? <p>Process completed.</p> : null}
-              </div>
-            </>}
-            </form>
-          </Card>}
+          <h3 className="text-xl font-bold mb-8">To verify circuit, select Circom source file...</h3>
+          <CircuitForm submitHandler={handleSubmit} />
+        </Card>}
     </>) : (<>
       <p>Invalid Address!</p>
     </>)}
