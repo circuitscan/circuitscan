@@ -24,5 +24,4 @@ RUN chmod +x /tmp/solc
 RUN mv /tmp/solc /usr/local/bin
 
 # Copy app source last for faster rebuilds
-COPY solc.js ${LAMBDA_TASK_ROOT}/
-COPY index.js ${LAMBDA_TASK_ROOT}/
+COPY *.js ${LAMBDA_TASK_ROOT}/

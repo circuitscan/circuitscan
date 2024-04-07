@@ -6,8 +6,13 @@ import {diffTrimmedLines} from 'diff';
 import {isAddress} from 'viem';
 import {holesky, sepolia} from 'viem/chains';
 import {DynamoDBClient, PutItemCommand, GetItemCommand} from '@aws-sdk/client-dynamodb';
+import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan.js";
 
 import { compileSolidityContract } from './solc.js';
+import {
+  standardJson,
+  findContractName,
+} from './etherscan.js';
 
 const BUILD_NAME = 'verify_circuit';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
@@ -16,13 +21,14 @@ const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constan
 const db = new DynamoDBClient({ region: "us-west-2" });
 const TableName = 'circuitscan1';
 
+
 const chains = [
   {
     chain: holesky,
     apiUrl: 'https://api-holesky.etherscan.io/api',
     apiKey: process.env.ETHERSCAN_API_KEY
   },
-{
+  {
     chain: sepolia,
     apiUrl: 'https://api-sepolia.etherscan.io/api',
     apiKey: process.env.ETHERSCAN_API_KEY
@@ -41,6 +47,10 @@ export async function handler(event) {
       return verify(event);
     case 'build':
       return build(event);
+    case 'verify-contract':
+      return verifyContract(event);
+    case 'check-verify-contract':
+      return checkVerification(event);
     default:
       throw new Error('invalid_command');
   }
@@ -52,6 +62,79 @@ async function getStatus(event) {
 
   const ogSource = await contractSource(event);
   return ogSource;
+}
+
+function findChain(chainId) {
+  for(let chain of chains) {
+    if(Number(chainId) === chain.chain.id) return chain;
+  }
+}
+
+async function verifyContract(event) {
+  if(!event.payload)
+    throw new Error('missing_payload');
+  if(!isAddress(event.payload.address))
+    throw new Error('invalid_address');
+  if(!event.payload.sourceCode)
+    throw new Error('missing_sourceCode');
+  if(!event.payload.chainId)
+    throw new Error('missing_chainId');
+  const chain = findChain(event.payload.chainId);
+  if(!chain)
+    throw new Error('invalid_chainId');
+
+
+  const etherscan = new Etherscan(
+    chain.apiKey,
+    chain.apiUrl,
+    chain.chain.blockExplorers.default.url
+  );
+  const { message: guid } = await etherscan.verify(
+    // Contract address
+    event.payload.address,
+    // Contract source code
+    standardJson(event.payload.sourceCode),
+    // Contract name
+    "contracts/Verified.sol:" + findContractName(event.payload.sourceCode),
+    // Compiler version
+    "v0.8.25+commit.b61c2a91",
+    // Encoded constructor arguments
+    ""
+  );
+
+  return {
+    statusCode: guid ? 200 : 400,
+    body: JSON.stringify({
+      guid,
+    }),
+  };
+}
+
+async function checkVerification(event) {
+  if(!event.payload)
+    throw new Error('missing_payload');
+  if(!event.payload.guid)
+    throw new Error('missing_guid');
+  if(!event.payload.chainId)
+    throw new Error('missing_chainId');
+  const chain = findChain(event.payload.chainId);
+  if(!chain)
+    throw new Error('invalid_chainId');
+
+  const etherscan = new Etherscan(
+    chain.apiKey,
+    chain.apiUrl,
+    chain.chain.blockExplorers.default.url
+  );
+  const result = await etherscan.getVerificationStatus(event.payload.guid);
+  const success = result.isSuccess();
+
+  return {
+    statusCode: success ? 200 : 404,
+    body: JSON.stringify({
+      success,
+    }),
+  };
 }
 
 async function contractSource(event) {
