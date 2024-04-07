@@ -9,7 +9,9 @@
     "dev": "vite",
     "build:frontend": "vite build",
     "build:server": "docker build -t circomscan_lambda server/",
-    "dev:server": "docker run -p 9000:8080 --env-file ./.env --rm circomscan_lambda"
+    "dev:server": "docker run -p 9000:8080 --env-file ./.env --rm circomscan_lambda",
+    "deploy:server": "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 664190027399.dkr.ecr.us-west-2.amazonaws.com && docker tag circomscan_lambda:latest 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest && docker push 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest",
+    "deploy:frontend": "rm -rf dist/ && vite build && aws s3 rm s3://circuitscan.clonk.me/ --recursive && aws s3 sync dist/ s3://circuitscan.clonk.me/"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.3",
