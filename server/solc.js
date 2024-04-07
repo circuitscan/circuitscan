@@ -19,9 +19,7 @@ export function compileSolidityContract(filePath) {
         return;
       }
       if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        reject(stderr);
-        return;
+        console.log(`stderr: ${stderr}`);
       }
 
       // Process the compilation output

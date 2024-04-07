@@ -108,14 +108,18 @@ export function Deploy() {
           }}),
         });
         const json2 = await resp2.json();
-        if('errorType' in json2) {
+        const alreadyVerified = 'errorType' in json2 && json2.errorMessage.indexOf('Already Verified') !== -1;
+        if('errorType' in json2 && !alreadyVerified) {
           clearInterval(finishedInterval);
           toast.dismiss();
           toast.error(json2.errorMessage);
           console.error(json2);
         }
-        const {success} = JSON.parse(json2.body);
-        if(success) {
+        let body2;
+        if(!alreadyVerified) {
+          body2 = JSON.parse(json2.body);
+        }
+        if(alreadyVerified || body2.success) {
           clearInterval(finishedInterval);
           toast.dismiss();
           toast.loading('Verifying circuit...');
@@ -133,11 +137,13 @@ export function Deploy() {
 
           toast.dismiss();
           navigate(`/address/${data.contractAddress}`);
+          return;
         }
         if(++intervalCount > 5) {
           clearInterval(finishedInterval);
           toast.dismiss();
           toast.error('Contract Verification Timeout!');
+          return;
         }
       }, 5000);
   }
@@ -167,7 +173,7 @@ export function Deploy() {
     : isSuccess ?
       <Card>
         <div className="flex flex-col w-full content-center items-center">
-          <p>Wait ~30 seconds before verifying contract.</p>
+          <p className="p-6">Wait ~30 seconds before verifying contract.</p>
           <button onClick={verifyContract} className={clsButton}>
             Verify Contract
           </button>

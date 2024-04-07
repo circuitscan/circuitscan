@@ -15,6 +15,7 @@ import {
 } from './etherscan.js';
 
 const BUILD_NAME = 'verify_circuit';
+const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
 
@@ -268,7 +269,12 @@ async function build(event, returnDirect) {
   await circomkit.setup(BUILD_NAME);
   await circomkit.vkey(BUILD_NAME);
   const contractPath = await circomkit.contract(BUILD_NAME);
-  const solidityCode = readFileSync(contractPath, {encoding: 'utf8'});
+  let solidityCode = readFileSync(contractPath, {encoding: 'utf8'});
+  // XXX: plonk output has an errant hardhat debug include?
+  if(solidityCode.indexOf(HARDHAT_IMPORT) > -1) {
+    solidityCode = solidityCode.replace(HARDHAT_IMPORT, '');
+    writeFileSync(contractPath, solidityCode);
+  }
   if(returnDirect) return solidityCode;
 
   const compiled = await compileSolidityContract(contractPath);
@@ -308,7 +314,7 @@ async function verify(event) {
       && diff[i].added
       // XXX: plonk output has an errant hardhat debug include?
       // Accept the verified source if this is removed
-      && diff[i].value.trim() !== 'import "hardhat/console.sol";'
+      && diff[i].value.trim() !== HARDHAT_IMPORT
     ) {
       // Otherise, anything else added is invalid
       console.log('invalid_addition', i);
