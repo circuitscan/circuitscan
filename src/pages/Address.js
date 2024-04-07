@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import ReactDiffViewer from 'react-diff-viewer';
 import { isAddress } from 'viem';
+import * as chains from 'viem/chains';
 import { ArrowTopRightOnSquareIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
 
 import useFetchJson from '../components/useFetchJson.js';
@@ -12,9 +13,6 @@ import UploadCode from '../components/UploadCode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import Card from '../components/Card.js';
 
-// Local or deployed
-const API_URL = '/api';
-// const API_URL = '';
 const INPUT_CLASS = `
   p-3
   bg-slate-100 dark:bg-slate-900
@@ -67,13 +65,16 @@ export function Address() {
     }
   }
 
-  let parsedData;
+  let parsedData, deployedChain;
   if(data) {
-    if(typeof data === 'string' || 'payload' in data) {
+    if('body' in data && typeof data.body === 'string') {
+      parsedData = JSON.parse(data.body);
+    } else {
       // Different format for function URL on AWS
       parsedData = data;
-    } else {
-      parsedData = JSON.parse(data.body);
+    }
+    if('chainId' in parsedData) {
+      deployedChain = findChain(parsedData.chainId);
     }
   }
 
@@ -88,7 +89,6 @@ export function Address() {
       tpl,
       protocol,
       address,
-      chainId: 17000,
     }});
     setData(result);
   }
@@ -100,30 +100,33 @@ export function Address() {
     {isValid ? (<>
       <h2 className="text-2xl font-bold">
         {address}&nbsp;
-        <a
-          href={`https://holesky.etherscan.io/address/${address}`}
+        {deployedChain && <a
+          href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
           target="_blank"
           rel="noopener"
           title="View on Block Explorer"
           className=""
         >
           <ArrowTopRightOnSquareIcon className="inline h-6 w-6" />
-        </a>
+        </a>}
       </h2>
       {loading ? <>
         <p>Loading contract data...</p>
       </> : error ? <>
         <p>Error loading contract data!</p>
-      </> : data && typeof parsedData === 'string' ? <>
+      </> : data && 'code' in parsedData ? <>
         <div className="">
-          This contract has been verified on Etherscan but the circuit has not yet been verified here.
+          This contract on {deployedChain.name} has been verified on {deployedChain.blockExplorers.default.name} but the circuit has not yet been verified here.
         </div>
         <Card>
           <CodeBlock
-            code={parsedData}
+            code={parsedData.code}
             language="solidity"
           />
         </Card>
+      </> : data && 'errorType' in parsedData ? <>
+        <p>{parsedData.errorType}</p>
+        <p>{parsedData.errorMessage}</p>
       </> : data ? <>
         <div className="">
           <div className="flex">
@@ -188,7 +191,7 @@ export function Address() {
         <p>Unkown error occurred!</p>
       </>}
 
-      {(parsedData && (typeof parsedData === 'string' || !parsedData.acceptableDiff)) &&
+      {(parsedData && ('code' in parsedData || !parsedData.acceptableDiff)) &&
         <Card>
           <form onSubmit={handleSubmit}>
             <h3 className="text-xl font-bold mb-8">To verify circuit, select Circom source file...</h3>
@@ -265,3 +268,8 @@ export function Address() {
   </div>);
 }
 
+function findChain(chainId) {
+  for(let chain of Object.keys(chains)) {
+    if(Number(chainId) === chains[chain].id) return chains[chain];
+  }
+}

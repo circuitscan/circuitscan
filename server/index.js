@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {Circomkit} from 'circomkit';
 import {diffTrimmedLines} from 'diff';
 import {isAddress} from 'viem';
+import {holesky, sepolia} from 'viem/chains';
 import {DynamoDBClient, PutItemCommand, GetItemCommand} from '@aws-sdk/client-dynamodb';
 
 const BUILD_NAME = 'verify_circuit';
@@ -12,6 +13,19 @@ const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constan
 
 const db = new DynamoDBClient({ region: "us-west-2" });
 const TableName = 'circuitscan1';
+
+const chains = [
+  {
+    chain: holesky,
+    apiUrl: 'https://api-holesky.etherscan.io/api',
+    apiKey: process.env.ETHERSCAN_API_KEY
+  },
+  {
+    chain: sepolia,
+    apiUrl: 'https://api-sepolia.etherscan.io/api',
+    apiKey: process.env.ETHERSCAN_API_KEY
+  },
+];
 
 export async function handler(event) {
   if('body' in event) {
@@ -56,39 +70,52 @@ async function contractSource(event) {
   if(existing && 'Item' in existing) {
     return {
       statusCode: 200,
-      body: JSON.stringify(existing.Item.code.S),
+      body: JSON.stringify({
+        code: existing.Item.code.S,
+        chainId: existing.Item.chainId.S,
+      }),
     };
   }
 
-  // TODO support different chains
-  const response = await fetch(
-    'https://api-holesky.etherscan.io/api' +
+  const reqs = await Promise.all(chains.map(chain => fetch(
+    chain.apiUrl +
     '?module=contract' +
     '&action=getsourcecode' +
     '&address=' + event.payload.address +
-    '&apikey=' + process.env.ETHERSCAN_API_KEY
-  );
-  const data = await response.json();
+    '&apikey=' + chain.apiKey
+   ).then(response => response.json())));
 
-  if(!data.result[0].SourceCode) return {
+  let code, chainId;
+  for(let i = 0; i < reqs.length; i++) {
+    const data = reqs[i];
+    if(!data.result[0].SourceCode) continue;
+
+    const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
+    code = inner.sources[Object.keys(inner.sources)[0]].content;
+    chainId = String(chains[i].chain.id);
+    break;
+  }
+
+  if(!code) return {
     statusCode: 404,
     body: JSON.stringify({error:'not_verified'}),
   };
-
-  const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
-  const code = inner.sources[Object.keys(inner.sources)[0]].content;
 
   await db.send(new PutItemCommand({
     TableName,
     Item: {
       id: { S: `${event.payload.address}-ogSource` },
       code: { S: code },
+      chainId: { S: chainId },
     },
   }));
 
   return {
     statusCode: 200,
-    body: JSON.stringify(code),
+    body: JSON.stringify({
+      code,
+      chainId,
+    }),
   };
 }
 
@@ -124,6 +151,7 @@ async function verify(event) {
 
   const ogSource = await contractSource(event);
   if(ogSource.statusCode !== 200) return ogSource;
+  const ogObj = JSON.parse(ogSource.body);
 
   const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
   for(let file of Object.keys(event.payload.files)) {
@@ -163,7 +191,7 @@ async function verify(event) {
   const contractPath = await circomkit.contract(BUILD_NAME);
   const contract = readFileSync(contractPath, {encoding: 'utf8'});
 
-  const diff = diffTrimmedLines(JSON.parse(ogSource.body), contract);
+  const diff = diffTrimmedLines(ogObj.code, contract);
 
   let acceptableDiff = true;
   let lastRemoved = null;
@@ -213,7 +241,8 @@ async function verify(event) {
   const body = JSON.stringify({
     payload: event.payload,
     contract,
-    ogSource: JSON.parse(ogSource.body),
+    ogSource: ogObj.code,
+    chainId: ogObj.chainId,
     diff,
     acceptableDiff,
   });

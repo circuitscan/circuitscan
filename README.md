@@ -6,12 +6,14 @@
 
 ## TODO
 
-- [ ] support more than just holesky
 - [ ] support more than just latest circom version
 - [ ] ddos protection!
+- [ ] separate lambdas deployed with low/high memory for getStatus/verify
 - [ ] allow for contract name changes?
 - [ ] form for submitting a proof to be verified
 - [ ] form for compiling and deploying a circuit
+- [ ] auto-include circomlib files in selector
+- [ ] fork/create new circuit
 
 ## Installation
 
