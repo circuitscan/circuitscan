@@ -30,3 +30,13 @@
   background: none;
 }
 
+
+#logo {
+  padding-left: 5.5rem;
+  background: url(images/logo-light.png) no-repeat top left;
+  background-size: contain;
+}
+@media (prefers-color-scheme: dark) {
+#logo {
+  background-image: url(images/logo-dark.png);
+}}

@@ -12,7 +12,7 @@ export const clsButton = `
 `;
 
 export const clsInput = `
-  p-3
+  p-3 w-full
   bg-slate-100 dark:bg-slate-900
   dark:text-white
   border border-zinc-300 dark:border-zinc-600
@@ -20,7 +20,8 @@ export const clsInput = `
 `;
 
 export const clsIconA = `
-  hover:text-fuchsia-700 active:text-fuchsia-500
+  hover:text-lightaccent active:text-lightaccent
+  dark:hover:text-darkaccent dar:active:text-darkaccent
 `;
 
 
@@ -40,15 +41,16 @@ export function Layout() {
 
   return (<>
       <Toaster />
-      <header className={`
+      <header id="logo" className={`
         flex-col
-        sm:flex-row
+        sm:flex-row items-end sm:items-center
         flex justify-between p-3
-        bg-zinc-100 dark:bg-zinc-900
         border-b border-zinc-300 dark:border-zinc-600
       `}>
         <div className="p-4">
-          <Link to="/"><h1 className="text-3xl font-bold">Circuitscan</h1></Link>
+          <Link to="/">
+            <h1 className="text-3xl font-bold">Circuitscan</h1>
+          </Link>
         </div>
         <div className="flex space-x-4 place-items-center">
           <form onSubmit={handleSearch}>
