@@ -5,7 +5,12 @@ import { toast } from 'react-hot-toast';
 import ReactDiffViewer from 'react-diff-viewer';
 import { isAddress } from 'viem';
 import * as chains from 'viem/chains';
-import { ArrowTopRightOnSquareIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import {
+  ArrowTopRightOnSquareIcon,
+  DocumentDuplicateIcon,
+  CheckIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline'
 
 import useFetchJson from '../components/useFetchJson.js';
 import useFetchPost from '../components/useFetchPost.js';
@@ -13,6 +18,7 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
+import {clsIconA} from '../components/Layout.js';
 
 // TODO form for submitting a proof to be verified
 export function Address() {
@@ -74,12 +80,21 @@ export function Address() {
     {isValid ? (<>
       <h2 className="text-2xl text-ellipsis overflow-hidden mb-3 font-bold">
         {address}&nbsp;
+        <a
+          href={`web3://${address}`}
+          onClick={() => setClipboard(address)}
+          title="Copy Address to Clipboard"
+          className={clsIconA}
+        >
+          <DocumentDuplicateIcon className="inline h-6 w-6" />
+        </a>
+
         {deployedChain && <a
           href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
           target="_blank"
           rel="noopener"
           title="View on Block Explorer"
-          className=""
+          className={clsIconA}
         >
           <ArrowTopRightOnSquareIcon className="inline h-6 w-6" />
         </a>}
@@ -181,3 +196,19 @@ function findChain(chainId) {
     if(Number(chainId) === chains[chain].id) return chains[chain];
   }
 }
+
+
+async function setClipboard(text) {
+  if (!navigator.clipboard) {
+    toast.error('Clipboard API is not available in this browser.');
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  } catch (err) {
+    toast.error('Failed to copy to clipboard');
+  }
+}
+

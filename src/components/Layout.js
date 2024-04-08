@@ -19,6 +19,10 @@ export const clsInput = `
   rounded-md
 `;
 
+export const clsIconA = `
+  hover:text-fuchsia-700 active:text-fuchsia-500
+`;
+
 
 export function Layout() {
   const location = useLocation();
