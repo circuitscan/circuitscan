@@ -151,7 +151,7 @@ export function Address() {
               <dt className="text-l font-bold">Template</dt>
               <dd className="pl-6">{parsedData.payload.tpl}</dd>
               <dt className="text-l font-bold">Params</dt>
-              <dd className="pl-6">{parsedData.payload.params}</dd>
+              <dd className="pl-6">{parsedData.payload.params || <span className="italic">None</span>}</dd>
               <dt className="text-l font-bold">Pubs</dt>
               <dd className="pl-6">{parsedData.payload.pubs || <span className="italic">None</span>}</dd>
             </dl>
