@@ -91,7 +91,9 @@ export function Deploy() {
         toast.dismiss();
         toast.error(json1.errorMessage);
         console.error(json1);
-        return;
+        if(json1.errorMessage.indexOf('waiting for a minute') > -1) {
+          setTimeout(verifyContract, 5000);
+        }
       }
       const {guid} = JSON.parse(json1.body);
       let intervalCount = 0;
@@ -151,6 +153,8 @@ export function Deploy() {
   useEffect(() => {
     if(data) {
       toast.dismiss();
+      toast.loading('Waiting for confirmations...');
+      setTimeout(verifyContract, 5000);
     }
   }, [data]);
 
@@ -173,10 +177,7 @@ export function Deploy() {
     : isSuccess ?
       <Card>
         <div className="flex flex-col w-full content-center items-center">
-          <p className="p-6">Wait ~30 seconds before verifying contract.</p>
-          <button onClick={verifyContract} className={clsButton}>
-            Verify Contract
-          </button>
+          <p>Verifying Contract and Circuit...</p>
         </div>
       </Card>
     : <Card>
