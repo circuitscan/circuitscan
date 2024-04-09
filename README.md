@@ -13,7 +13,6 @@
 - [ ] form for submitting a proof to be verified
 - [ ] auto-include circomlib files in selector
 - [ ] fork/create new circuit
-- [ ] doh! need chainId in url
 
 ## Installation
 

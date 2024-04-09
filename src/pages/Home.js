@@ -10,18 +10,28 @@ export function Home() {
     <Helmet>
       <title>Circuitscan - Home</title>
     </Helmet>
-    <p className="p-6">
-      <Link to="/deploy">
-        <button className={clsButton}>
-          <PaperAirplaneIcon className="h-9 w-9 text-red-500" />
-          Deploy Circuit
-        </button>
-      </Link>
-    </p>
-    <p className="p-6">
-      This beta version supports Sepolia and Holesky
-    </p>
-    <h3 className="text-xl p-6 pb-0">Example circuits</h3>
+    <Card>
+      <p className="py-3">
+        Like verifying a contract on Etherscan, verify your Circom circuits on Circuitscan.
+        <br />
+        This beta version supports Sepolia and Holesky.
+      </p>
+      <p className="p-6">
+        <Link to="/deploy">
+          <button className={clsButton}>
+            <PaperAirplaneIcon className="h-9 w-9 text-red-500" />
+            Deploy Circuit
+          </button>
+        </Link>
+        <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
+          <button className={clsButton}>
+            <CodeBracketSquareIcon className="h-9 w-9 text-blue-500" />
+            View Github Repo
+          </button>
+        </a>
+      </p>
+    </Card>
+    <h3 className="text-xl p-6 pb-0">Example verifiers</h3>
     <ul className="p-6 pl-9 list-disc">
       <li><Link className={clsIconA} to="/address/0xda66ad5da2619054d890c359cb22601b104ac662">multiplier(3) groth16</Link></li>
       <li><Link className={clsIconA} to="/address/0x0E3f0713C4636e29BEDc750F5b8e84Ef02969BeA">multiplier(2) groth16 with pubs on holesky</Link></li>
@@ -31,16 +41,8 @@ export function Home() {
       <li><Link className={clsIconA} to="/address/0x76e83a791975fba6b86fbb44221857def11ff6bb">multiplier(3) plonk whitespace,  hardhat import missing, different contract name</Link></li>
       <li><Link className={clsIconA} to="/address/0x776Da74251Ea5f609354feE4F40C71fEc1a54926">lessthan(4) plonk whitespace,  hardhat import missing</Link></li>
     </ul>
-    <p className="p-6">
-      <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
-        <button className={clsButton}>
-          <CodeBracketSquareIcon className="h-9 w-9 text-blue-500" />
-          View Github Repo
-        </button>
-      </a>
-    </p>
     <Card>
-      <h3 className="text-xl p-6 pb-0">Why do Groth16 circuits always mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
+      <h3 className="text-xl p-6 pb-0">Why do Groth16 verifiers always mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
       <p className="p-6">
         These values correspond to the entropy used during compilation. This process does not attempt to recreate these settings.
       </p>

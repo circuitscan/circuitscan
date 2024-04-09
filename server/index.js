@@ -58,11 +58,15 @@ export async function handler(event) {
 }
 
 async function getStatus(event) {
-  const verified = await getVerified(event);
-  if(verified) return verified;
-
-  const ogSource = await contractSource(event);
-  return ogSource;
+  let verified;
+  if(event.payload.chainId) {
+    verified = await getVerified(event);
+  }
+  const source = await contractSource(event);
+  return {
+    verified: verified && verified.body && JSON.parse(verified.body),
+    source: source && source.body && JSON.parse(source.body),
+  };
 }
 
 function findChain(chainId) {
@@ -155,12 +159,16 @@ async function contractSource(event) {
       throw error;
   }
 
-  if(existing && 'Item' in existing) {
+  // TODO ddos protection
+  if(!event.forceUpdate && existing && 'Item' in existing) {
+    const foundChains = existing.Item.chains.M;
+    for(let chain of Object.keys(foundChains)) {
+      foundChains[chain] = foundChains[chain].S;
+    }
     return {
       statusCode: 200,
       body: JSON.stringify({
-        code: existing.Item.code.S,
-        chainId: existing.Item.chainId.S,
+        chains: foundChains,
       }),
     };
   }
@@ -173,18 +181,17 @@ async function contractSource(event) {
     '&apikey=' + chain.apiKey
    ).then(response => response.json())));
 
-  let code, chainId;
+  const foundChains = {};
   for(let i = 0; i < reqs.length; i++) {
     const data = reqs[i];
     if(!data.result[0].SourceCode) continue;
 
     const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
-    code = inner.sources[Object.keys(inner.sources)[0]].content;
-    chainId = String(chains[i].chain.id);
-    break;
+    foundChains[String(chains[i].chain.id)] =
+      inner.sources[Object.keys(inner.sources)[0]].content;
   }
 
-  if(!code) return {
+  if(!Object.keys(foundChains).length) return {
     statusCode: 404,
     body: JSON.stringify({error:'not_verified'}),
   };
@@ -193,16 +200,19 @@ async function contractSource(event) {
     TableName,
     Item: {
       id: { S: `${event.payload.address}-ogSource` },
-      code: { S: code },
-      chainId: { S: chainId },
+      chains: {
+        M: Object.keys(foundChains).reduce((out, cur) => {
+          out[cur] = { S: foundChains[cur] };
+          return out;
+        }, {}),
+      },
     },
   }));
 
   return {
     statusCode: 200,
     body: JSON.stringify({
-      code,
-      chainId,
+      chains: foundChains,
     }),
   };
 }
@@ -212,12 +222,17 @@ async function getVerified(event) {
     throw new Error('missing_payload');
   if(!isAddress(event.payload.address))
     throw new Error('invalid_address');
+  if(!event.payload.chainId)
+    throw new Error('missing_chainId');
+  const chain = findChain(event.payload.chainId);
+  if(!chain)
+    throw new Error('invalid_chainId');
 
   let existing;
   try {
     existing = await db.send(new GetItemCommand({
       TableName,
-      Key: { id: { S: `${event.payload.address}-verified` } },
+      Key: { id: { S: `${event.payload.address}-${event.payload.chainId}-verified` } },
     }));
   } catch(error) {
     if(error.errorType !== 'ResourceNotFoundException')
@@ -289,6 +304,12 @@ async function build(event, returnDirect) {
 
 // TODO ddos protection!
 async function verify(event) {
+  if(!event.payload.chainId)
+    throw new Error('missing_chainId');
+  const chain = findChain(event.payload.chainId);
+  if(!chain)
+    throw new Error('invalid_chainId');
+
   const verified = await getVerified(event);
   if(verified) return verified;
 
@@ -298,7 +319,7 @@ async function verify(event) {
 
 
   const contract = await build(event, true);
-  const diff = diffTrimmedLines(ogObj.code, contract);
+  const diff = diffTrimmedLines(ogObj.chains[event.payload.chainId], contract);
 
   let acceptableDiff = true;
   let lastRemoved = null;
@@ -312,6 +333,8 @@ async function verify(event) {
       lastRemoved = i;
     } else if(lastRemoved === null
       && diff[i].added
+      // Added whitespace is fine
+      && diff[i].value.trim() !== ''
       // XXX: plonk output has an errant hardhat debug include?
       // Accept the verified source if this is removed
       && diff[i].value.trim() !== HARDHAT_IMPORT
@@ -348,8 +371,8 @@ async function verify(event) {
   const body = JSON.stringify({
     payload: event.payload,
     contract,
-    ogSource: ogObj.code,
-    chainId: ogObj.chainId,
+    ogSource: ogObj.chains[event.payload.chainId],
+    chainId: event.payload.chainId,
     diff,
     acceptableDiff,
   });
@@ -358,7 +381,7 @@ async function verify(event) {
     await db.send(new PutItemCommand({
       TableName,
       Item: {
-        id: { S: `${event.payload.address}-verified` },
+        id: { S: `${event.payload.address}-${event.payload.chainId}-verified` },
         body: { S: body },
       },
     }));

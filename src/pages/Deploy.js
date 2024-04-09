@@ -130,6 +130,7 @@ export function Deploy() {
             ...formEvent,
             action: 'verify',
             address: data.contractAddress,
+            chainId: String(chainId),
           }});
           if('errorType' in result) {
             toast.dismiss();
@@ -138,7 +139,7 @@ export function Deploy() {
           }
 
           toast.dismiss();
-          navigate(`/address/${data.contractAddress}`);
+          navigate(`/chain/${chainId}/address/${data.contractAddress}`);
           return;
         }
         if(++intervalCount > 5) {
@@ -181,7 +182,7 @@ export function Deploy() {
         </div>
       </Card>
     : <Card>
-        <div className="py-6">
+        <div className="pb-6">
           <ConnectButton />
         </div>
         <h3 className="text-xl font-bold mb-8">To deploy circuit, select Circom source file...</h3>

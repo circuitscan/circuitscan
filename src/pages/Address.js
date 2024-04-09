@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { toast } from 'react-hot-toast';
 import ReactDiffViewer from 'react-diff-viewer';
@@ -18,12 +18,13 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
-import {clsIconA} from '../components/Layout.js';
+import {clsIconA, clsButton} from '../components/Layout.js';
 
 // TODO form for submitting a proof to be verified
 export function Address() {
+  const navigate = useNavigate();
   const darkMode = useDarkMode();
-  const {address} = useParams();
+  const {address, chain: chainParam} = useParams();
   const isValid = isAddress(address);
   const {data, loading, error, setData} = useFetchJson(
     isValid ? import.meta.env.VITE_API_URL : null,
@@ -31,6 +32,7 @@ export function Address() {
       payload: {
         action: 'get-status',
         address,
+        chainId: chainParam,
       },
     },
   );
@@ -56,8 +58,15 @@ export function Address() {
       // Different format for function URL on AWS
       parsedData = data;
     }
-    if('chainId' in parsedData) {
-      deployedChain = findChain(parsedData.chainId);
+    if(!chainParam
+        && parsedData.source.chains
+        && Object.keys(parsedData.source.chains).length > 0
+    ) {
+      const firstChain = Object.keys(parsedData.source.chains)[0];
+      navigate(`/chain/${firstChain}/address/${address}`);
+    }
+    if(chainParam) {
+      deployedChain = findChain(chainParam);
     }
   }
 
@@ -67,8 +76,12 @@ export function Address() {
       ...event,
       action: 'verify',
       address,
+      chainId: chainParam,
     }});
-    setData(result);
+    setData({
+      ...data,
+      verified: JSON.parse(result.body),
+    });
     toast.dismiss();
     window.scrollTo(0,0);
   }
@@ -78,7 +91,7 @@ export function Address() {
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {isValid ? (<>
-      <h2 className="text-2xl text-ellipsis overflow-hidden mb-3 font-bold">
+      <h2 className="text-l text-ellipsis overflow-hidden mb-3 font-bold">
         {address}&nbsp;
         <a
           href={`web3://${address}`}
@@ -86,8 +99,8 @@ export function Address() {
           title="Copy Address to Clipboard"
           className={clsIconA}
         >
-          <DocumentDuplicateIcon className="inline h-6 w-6" />
-        </a>
+          <DocumentDuplicateIcon className="inline h-5 w-5" />
+        </a>&nbsp;
 
         {deployedChain && <a
           href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
@@ -96,30 +109,52 @@ export function Address() {
           title="View on Block Explorer"
           className={clsIconA}
         >
-          <ArrowTopRightOnSquareIcon className="inline h-6 w-6" />
+          <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
         </a>}
       </h2>
+      {parsedData && parsedData.source && <>
+        {Object.keys(parsedData.source.chains).map((chainId) => {
+          const chain = findChain(chainId);
+          return <button
+            key={chainId}
+            disabled={chainParam === chainId}
+            className={`
+              ${clsButton}
+              ${chainParam === chainId ? `
+                disabled:bg-lightaccent disabled:dark:bg-darkaccent
+                disabled:text-white disabled:dark:text-slate-800
+
+              ` : ''}
+            `}
+            onClick={() => navigate(`/chain/${chainId}/address/${address}`)}
+          >
+            <>{chain.name}</>
+          </button>;
+        })}
+      </>}
       {loading ? <>
         <p>Loading contract data...</p>
       </> : error ? <>
         <p>Error loading contract data!</p>
-      </> : data && 'code' in parsedData ? <>
+      </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
         <div className="">
-          This contract on {deployedChain.name} has been verified on {deployedChain.blockExplorers.default.name} but the circuit has not yet been verified here.
+          This contract has been verified on {deployedChain.blockExplorers.default.name} but the circuit has not yet been verified here.
         </div>
         <Card>
           <CodeBlock
-            code={parsedData.code}
+            code={parsedData.source.chains[chainParam]}
             language="solidity"
           />
         </Card>
       </> : data && 'errorType' in parsedData ? <>
-        <p>{parsedData.errorType}</p>
-        <p>{parsedData.errorMessage}</p>
-      </> : data ? <>
+        <Card>
+          <p className="text-rose-600 dark:text-rose-300">{parsedData.errorType}</p>
+          <p>{parsedData.errorMessage}</p>
+        </Card>
+      </> : data && parsedData.verified ? <>
         <div className="">
           <div className="flex">
-            {parsedData.acceptableDiff ? <>
+            {parsedData.verified.acceptableDiff ? <>
               <CheckIcon className="h-6 w-6 text-blue-500" />
               <p>The circuit has been verified for this contract</p>
             </> : <>
@@ -128,15 +163,15 @@ export function Address() {
             </>}
           </div>
 
-          {parsedData.diff.length > 1 && <>
+          {parsedData.verified.diff.length > 1 && <>
             <Card>
-              <h3 className="text-xl font-bold">Solidity Contract Diff ({parsedData.acceptableDiff ? 'Acceptable' : 'Not Accepted'})</h3>
+              <h3 className="text-xl font-bold">Solidity Contract Diff ({parsedData.verified.acceptableDiff ? 'Acceptable' : 'Not Accepted'})</h3>
               <div
                 className="mt-6 line-numbers overflow-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
               >
                 <ReactDiffViewer
-                  newValue={parsedData.ogSource}
-                  oldValue={parsedData.contract}
+                  newValue={parsedData.verified.ogSource}
+                  oldValue={parsedData.verified.contract}
                   splitView={false}
                   useDarkTheme={darkMode}
                 />
@@ -147,30 +182,30 @@ export function Address() {
           <Card>
             <dl>
               <dt className="text-l font-bold">Protocol</dt>
-              <dd className="pl-6">{parsedData.payload.protocol}</dd>
+              <dd className="pl-6">{parsedData.verified.payload.protocol}</dd>
               <dt className="text-l font-bold">Template</dt>
-              <dd className="pl-6">{parsedData.payload.tpl}</dd>
+              <dd className="pl-6">{parsedData.verified.payload.tpl}</dd>
               <dt className="text-l font-bold">Params</dt>
-              <dd className="pl-6">{parsedData.payload.params || <span className="italic">None</span>}</dd>
+              <dd className="pl-6">{parsedData.verified.payload.params || <span className="italic">None</span>}</dd>
               <dt className="text-l font-bold">Pubs</dt>
-              <dd className="pl-6">{parsedData.payload.pubs || <span className="italic">None</span>}</dd>
+              <dd className="pl-6">{parsedData.verified.payload.pubs || <span className="italic">None</span>}</dd>
             </dl>
           </Card>
 
           <Card>
-            <h3 className="text-xl font-bold">{parsedData.payload.file}</h3>
+            <h3 className="text-xl font-bold">{parsedData.verified.payload.file}</h3>
             <CodeBlock
-              code={parsedData.payload.files[parsedData.payload.file].code}
+              code={parsedData.verified.payload.files[parsedData.verified.payload.file].code}
               language="circom"
             />
           </Card>
 
-          {Object.keys(parsedData.payload.files)
-            .filter(x => x !== parsedData.payload.file).map((file, index) => <>
+          {Object.keys(parsedData.verified.payload.files)
+            .filter(x => x !== parsedData.verified.payload.file).map((file, index) => <>
               <Card key={index}>
                 <h3 className="text-xl font-bold">{file}</h3>
                 <CodeBlock
-                  code={parsedData.payload.files[file].code}
+                  code={parsedData.verified.payload.files[file].code}
                   language="circom"
                 />
               </Card>
@@ -180,7 +215,12 @@ export function Address() {
         <p>Unkown error occurred!</p>
       </>}
 
-      {(parsedData && ('code' in parsedData || !parsedData.acceptableDiff)) &&
+      {parsedData
+       && parsedData.source
+       && 'chains' in parsedData.source
+       && Object.keys(parsedData.source.chains).length > 0
+       && (!parsedData.verified || !parsedData.verified.acceptableDiff)
+       &&
         <Card>
           <h3 className="text-xl font-bold mb-8">To verify circuit, select Circom source file...</h3>
           <CircuitForm submitHandler={handleSubmit} />

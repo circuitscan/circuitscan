@@ -10,9 +10,8 @@ export default function useFetchJson(url, body) {
   const requestSent = useRef(false);
 
   useEffect(() => {
-    if (requestSent.current) {
-      return;
-    }
+    const propsId = JSON.stringify({url, body});
+    if (requestSent.current && requestSent.current === propsId) return;
 
     const fetchData = async () => {
       if(!url) {
@@ -41,9 +40,9 @@ export default function useFetchJson(url, body) {
       }
     };
 
-    requestSent.current = true;
+    requestSent.current = propsId;
     fetchData();
-  }, []);
+  }, [url, body]);
 
   return { data, loading, error, setData };
 };

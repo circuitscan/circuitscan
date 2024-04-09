@@ -32,8 +32,7 @@
 
 
 #logo {
-  padding-left: 5.5rem;
-  background: url(images/logo-light.png) no-repeat top left;
+  background: url(images/logo-light.png) no-repeat 10px 0;
   background-size: contain;
 }
 @media (prefers-color-scheme: dark) {

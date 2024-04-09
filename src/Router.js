@@ -21,6 +21,10 @@ export function Router() {
               element: <Address />,
             },
             {
+              path: "chain/:chain/address/:address",
+              element: <Address />,
+            },
+            {
               path: "deploy",
               element: <Deploy />,
             },

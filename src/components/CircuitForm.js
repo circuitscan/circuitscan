@@ -102,7 +102,10 @@ export default function CircuitForm({
       <div className="flex p-4 items-center">
         <button
           disabled={disableSubmit}
-          className={clsButton}
+          className={`
+            ${clsButton}
+            disabled:bg-slate-400 disabled:dark:bg-slate-600
+          `}
         >
           Submit
         </button>
