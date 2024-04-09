@@ -32,8 +32,10 @@
 
 
 #logo {
-  background: url(images/logo-light.png) no-repeat 10px 0;
-  background-size: contain;
+  background-image: url(images/logo-light.png);
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: auto 75%;
 }
 @media (prefers-color-scheme: dark) {
 #logo {

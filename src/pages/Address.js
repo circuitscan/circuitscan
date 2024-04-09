@@ -50,7 +50,8 @@ export function Address() {
     }
   }, [ postError ]);
 
-  let parsedData, deployedChain;
+  // TODO how to stop flikering using loadMore flag
+  let parsedData, deployedChain, loadMore = true;
   if(data) {
     if('body' in data && typeof data.body === 'string') {
       parsedData = JSON.parse(data.body);
@@ -67,6 +68,7 @@ export function Address() {
     }
     if(chainParam) {
       deployedChain = findChain(chainParam);
+      loadMore = false;
     }
   }
 
@@ -86,58 +88,88 @@ export function Address() {
     window.scrollTo(0,0);
   }
 
-  return (<div id="address" className="p-6">
+  return (<div id="address">
     <Helmet>
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {isValid ? (<>
-      <h2 className="text-l text-ellipsis overflow-hidden mb-3 font-bold">
-        {address}&nbsp;
-        <a
-          href={`web3://${address}`}
-          onClick={() => setClipboard(address)}
-          title="Copy Address to Clipboard"
-          className={clsIconA}
-        >
-          <DocumentDuplicateIcon className="inline h-5 w-5" />
-        </a>&nbsp;
+      <div className="p-6 pb-0">
+        <h2 className="text-l text-ellipsis overflow-hidden mb-3">
+          {parsedData && !loadMore && <div className="inline-block mr-1 align-middle">
+            <div className={`
+              flex pl-2 pr-3 py-1
+              border rounded-full bg-neutral-200 dark:bg-neutral-900
+              border-neutral-400 dark:border-neutral-600
+              text-sm
+            `}>
+              {parsedData && parsedData.verified && parsedData.verified.acceptableDiff ? <>
+                <CheckIcon className="h-5 w-5 text-blue-500" />
+                <p>Circuit Verified</p>
+              </> : <>
+                <XMarkIcon className="h-5 w-5 text-red-500" />
+                <p>Circuit not verified</p>
+              </>}
+            </div>
+          </div>}
 
-        {deployedChain && <a
-          href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
-          target="_blank"
-          rel="noopener"
-          title="View on Block Explorer"
-          className={clsIconA}
-        >
-          <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
-        </a>}
-      </h2>
-      {parsedData && parsedData.source && <>
-        {Object.keys(parsedData.source.chains).map((chainId) => {
-          const chain = findChain(chainId);
-          return <button
-            key={chainId}
-            disabled={chainParam === chainId}
-            className={`
-              ${clsButton}
-              ${chainParam === chainId ? `
+          <span className="mr-1 align-middle">{address}</span>
+
+          <a
+            href={`web3://${address}`}
+            onClick={() => setClipboard(address)}
+            title="Copy Address to Clipboard"
+            className={`${clsIconA} print:hidden`}
+          >
+            <DocumentDuplicateIcon className="inline h-5 w-5" />
+          </a>&nbsp;
+
+          {deployedChain && <a
+            href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
+            target="_blank"
+            rel="noopener"
+            title="View on Block Explorer"
+            className={`${clsIconA} print:hidden`}
+          >
+            <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
+          </a>}
+
+        </h2>
+        {parsedData && parsedData.source && <>
+          {Object.keys(parsedData.source.chains).map((chainId) => {
+            const chain = findChain(chainId);
+            return <button
+              key={chainId}
+              disabled={chainParam === chainId}
+              className={`
+                inline-block px-2 py-1 mr-2
+                border rounded-full bg-neutral-200 dark:bg-neutral-900
+                border-neutral-400 dark:border-neutral-600
+                text-sm
                 disabled:bg-lightaccent disabled:dark:bg-darkaccent
                 disabled:text-white disabled:dark:text-slate-800
-
-              ` : ''}
-            `}
-            onClick={() => navigate(`/chain/${chainId}/address/${address}`)}
-          >
-            <>{chain.name}</>
-          </button>;
-        })}
-      </>}
-      {loading ? <>
-        <p>Loading contract data...</p>
+                disabled:border-0
+              `}
+              onClick={() => navigate(`/chain/${chainId}/address/${address}`)}
+            >
+              <>{chain.name}</>
+            </button>;
+          })}
+        </>}
+      </div>
+      {loading || loadMore ? <>
+        <Card>
+          <div className="flex flex-col w-full content-center items-center">
+            <p className="p-6">Loading contract data...</p>
+          </div>
+        </Card>
       </> : error ? <>
-        <p>Error loading contract data!</p>
+        <Card>
+          <div className="flex flex-col w-full content-center items-center">
+            <p className="p-6">Error loading contract data!</p>
+          </div>
+        </Card>
       </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
-        <div className="">
+        <div className="p-6">
           This contract has been verified on {deployedChain.blockExplorers.default.name} but the circuit has not yet been verified here.
         </div>
         <Card>
@@ -153,31 +185,6 @@ export function Address() {
         </Card>
       </> : data && parsedData.verified ? <>
         <div className="">
-          <div className="flex">
-            {parsedData.verified.acceptableDiff ? <>
-              <CheckIcon className="h-6 w-6 text-blue-500" />
-              <p>The circuit has been verified for this contract</p>
-            </> : <>
-              <XMarkIcon className="h-6 w-6 text-red-500" />
-              <p>The verification has failed</p>
-            </>}
-          </div>
-
-          {parsedData.verified.diff.length > 1 && <>
-            <Card>
-              <h3 className="text-xl font-bold">Solidity Contract Diff ({parsedData.verified.acceptableDiff ? 'Acceptable' : 'Not Accepted'})</h3>
-              <div
-                className="mt-6 line-numbers overflow-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
-              >
-                <ReactDiffViewer
-                  newValue={parsedData.verified.ogSource}
-                  oldValue={parsedData.verified.contract}
-                  splitView={false}
-                  useDarkTheme={darkMode}
-                />
-              </div>
-            </Card>
-          </>}
 
           <Card>
             <dl>
@@ -210,12 +217,28 @@ export function Address() {
                 />
               </Card>
           </>)}
+
+          {parsedData.verified.diff.length > 1 && <>
+            <Card>
+              <h3 className="text-xl font-bold">Solidity Contract Diff ({parsedData.verified.acceptableDiff ? 'Acceptable' : 'Not Accepted'})</h3>
+              <div
+                className="mt-6 line-numbers overflow-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
+              >
+                <ReactDiffViewer
+                  newValue={parsedData.verified.ogSource}
+                  oldValue={parsedData.verified.contract}
+                  splitView={false}
+                  useDarkTheme={darkMode}
+                />
+              </div>
+            </Card>
+          </>}
         </div>
       </> : <>
         <p>Unkown error occurred!</p>
       </>}
 
-      {parsedData
+      {!loadMore && parsedData
        && parsedData.source
        && 'chains' in parsedData.source
        && Object.keys(parsedData.source.chains).length > 0

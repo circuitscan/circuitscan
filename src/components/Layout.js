@@ -4,17 +4,17 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { isAddress } from 'viem';
 
 export const clsButton = `
-  px-4 py-2 mr-4 mb-4 bg-slate-100 dark:bg-slate-900 dark:text-white rounded-md
-  hover:bg-slate-300 active:bg-slate-400
-  dark:hover:bg-slate-800 dark:active:bg-slate-700
-  border border-zinc-300 dark:border-zinc-600
+  px-4 py-2 mr-4 mb-4 bg-neutral-100 dark:bg-neutral-900 dark:text-white rounded-md
+  hover:bg-neutral-200 active:bg-neutral-300
+  dark:hover:bg-neutral-800 dark:active:bg-neutral-700
+  border border-neutral-300 dark:border-neutral-600
 `;
 
 export const clsInput = `
-  px-3 py-2 w-full
-  bg-slate-100 dark:bg-slate-900
+  px-3 py-1 w-full
+  bg-neutral-100 dark:bg-neutral-900
   dark:text-white
-  border border-zinc-300 dark:border-zinc-600
+  border border-neutral-300 dark:border-neutral-600
   rounded-md
 `;
 
@@ -41,21 +41,22 @@ export function Layout() {
   return (<>
       <Toaster />
       <header id="logo" className={`
-        flex-col
+        flex-col bg-neutral-50 dark:bg-neutral-900
         sm:flex-row items-end sm:items-center
-        flex justify-between px-3 py-2 sm:py-1
-        border-b border-zinc-300 dark:border-zinc-600
+        flex justify-between px-3 py-2 sm:py-3
+        border-b border-neutral-300 dark:border-neutral-600
       `}>
         <div className="w-full">
           <Link to="/">
             <h1 className={`
-              sm:pl-14 sm:w-auto
-              w-full text-3xl text-right sm:text-left
+              sm:pl-12 sm:w-auto py-2 sm:py-0 print:pl-0
+              w-full text-2xl text-right sm:text-left
               text-slate-900 dark:text-slate-200
+              tracking-tight
             `}>Circuitscan</h1>
           </Link>
         </div>
-        <div className="flex space-x-4 place-items-center">
+        <div className="flex space-x-4 place-items-center print:hidden">
           <form onSubmit={handleSearch}>
             <input
               className={`${clsInput} min-w-72 focus:min-w-80 transition-all`}

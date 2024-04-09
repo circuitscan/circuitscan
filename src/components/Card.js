@@ -2,7 +2,9 @@
 export default function Card({ children }) {
   return (<div className={`
     mx-3 my-6 p-6 border rounded-md
-    bg-zinc-100 border-zinc-300
-    dark:bg-zinc-900 dark:border-zinc-600
+    bg-neutral-100 border-neutral-300
+    dark:bg-neutral-900 dark:border-neutral-600
+    shadow-xl shadow-neutral-200 dark:shadow-neutral-700
+    print:shadow-none
   `}>{children}</div>);
 }
