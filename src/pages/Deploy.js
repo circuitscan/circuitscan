@@ -41,7 +41,7 @@ export function Deploy() {
   async function handleSubmit(event) {
     setFormEvent(event);
     toast.loading('Compiling circuit...');
-    const result = await post(import.meta.env.VITE_API_URL, { payload: {
+    const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
       ...event,
       action: 'build',
     }});
@@ -50,7 +50,7 @@ export function Deploy() {
       toast.error(result.errorMessage);
       return;
     }
-    const body = JSON.parse(result.body);
+    const body = 'body' in result ? JSON.parse(result.body) : result;
     setCompiled(body);
 
     toast.dismiss();
@@ -71,22 +71,40 @@ export function Deploy() {
     setTxHash(hash);
   }
 
-  async function verifyContract() {
+  async function verifyContract(retries) {
       toast.dismiss();
       toast.loading('Verifying contract...');
-      const resp1 = await fetch(import.meta.env.VITE_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ payload: {
-          action: 'verify-contract',
-          address: data.contractAddress,
-          chainId: String(chainId),
-          sourceCode: compiled.solidityCode,
-        }}),
-      });
-      const json1 = await resp1.json();
+      let json1;
+      try {
+        const resp1 = await fetch(import.meta.env.VITE_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ payload: {
+            action: 'verify-contract',
+            address: data.contractAddress,
+            chainId: String(chainId),
+            sourceCode: compiled.solidityCode,
+          }}),
+        });
+        json1 = await resp1.json();
+      } catch(error) {
+        // AWS Deployed version throws on error
+        toast.dismiss();
+        if((retries || 0) < 5) {
+          toast.loading('Error verifying contract, retrying...');
+        } else {
+          toast.error(error.message);
+        }
+        console.error(error);
+        setTimeout(() => {
+          // Retry 5 times, 10 seconds each...
+          if((retries || 0) < 5) verifyContract((retries || 0) + 1);
+        }, 10000);
+        return;
+      }
+      // Local dev version returns like this:
       if('errorType' in json1) {
         toast.dismiss();
         toast.error(json1.errorMessage);
@@ -95,7 +113,7 @@ export function Deploy() {
           setTimeout(verifyContract, 5000);
         }
       }
-      const {guid} = JSON.parse(json1.body);
+      const {guid} = 'body' in json1 ? JSON.parse(json1.body) : json1;
       let intervalCount = 0;
       const finishedInterval = setInterval(async () => {
         const resp2 = await fetch(import.meta.env.VITE_API_URL, {
@@ -119,14 +137,14 @@ export function Deploy() {
         }
         let body2;
         if(!alreadyVerified) {
-          body2 = JSON.parse(json2.body);
+          body2 = 'body' in json2 ? JSON.parse(json2.body) : json2;
         }
         if(alreadyVerified || body2.success) {
           clearInterval(finishedInterval);
           toast.dismiss();
           toast.loading('Verifying circuit...');
 
-          const result = await post(import.meta.env.VITE_API_URL, { payload: {
+          const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
             ...formEvent,
             action: 'verify',
             address: data.contractAddress,

@@ -74,7 +74,7 @@ export function Address() {
 
   async function handleSubmit(event) {
     toast.loading('Processing verification...');
-    const result = await post(import.meta.env.VITE_API_URL, { payload: {
+    const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
       ...event,
       action: 'verify',
       address,
@@ -82,7 +82,7 @@ export function Address() {
     }});
     setData({
       ...data,
-      verified: JSON.parse(result.body),
+      verified: 'body' in result ? JSON.parse(result.body) : result,
     });
     toast.dismiss();
     window.scrollTo(0,0);

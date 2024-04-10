@@ -43,6 +43,8 @@ export function Layout() {
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
         border-b border-neutral-300 dark:border-neutral-600
+        shadow-xl shadow-neutral-200 dark:shadow-neutral-700
+        print:shadow-none
       `}>
         <div id="logo" className={`
           px-3 py-2 sm:py-3

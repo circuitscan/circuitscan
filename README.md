@@ -7,8 +7,8 @@
 ## TODO
 
 - [ ] support more than just latest circom version
-- [ ] ddos protection!
-- [ ] separate lambdas deployed with low/high memory for getStatus/verify
+- [ ] ddos protection! / account system
+- [ ] api for programmatic verification / command in circomkit fo ci
 - [ ] allow for contract name changes?
 - [ ] form for submitting a proof to be verified
 - [ ] auto-include circomlib files in selector
@@ -35,7 +35,8 @@ $ yarn dev
 
 ```
 # Configure Etherscan, AWS DynamoDB
-# And update the `VITE_API_URL` to `/api` in your `.env` file
+# and change VITE_API_URL`, `VITE_API_URL_BIG` to `/api`
+# to use the local running docker container through vite proxy
 $ vim .env
 
 # Build server lambda docker image

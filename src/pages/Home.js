@@ -13,8 +13,10 @@ export function Home() {
     <Card>
       <p className="py-3">
         Like verifying a contract on the block explorer, verify your Circom circuits on the circuit explorer.
-        <br />
+        <br /><br />
         This beta version supports Sepolia and Holesky.
+        <br />
+        Maximum 5000 MB RAM on server for deploy/verify.
       </p>
       <p className="p-6">
         <Link to="/deploy">

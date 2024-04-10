@@ -250,6 +250,8 @@ async function getVerified(event) {
 // TODO cache result to avoid double build on deploy
 async function build(event, returnDirect) {
   const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
+  const dirPtau = mkdtempSync(join(tmpdir(), 'ptau-'));
+  const dirBuild = mkdtempSync(join(tmpdir(), 'build-'));
   for(let file of Object.keys(event.payload.files)) {
     let code = event.payload.files[file].code;
     const imports = Array.from(code.matchAll(/include "([^"]+)";/g));
@@ -262,6 +264,8 @@ async function build(event, returnDirect) {
 
   const config = {
     dirCircuits,
+    dirPtau,
+    dirBuild,
     protocol: event.payload.protocol,
   };
 
