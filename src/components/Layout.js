@@ -40,32 +40,37 @@ export function Layout() {
 
   return (<>
       <Toaster />
-      <header id="logo" className={`
-        flex-col bg-neutral-50 dark:bg-neutral-900
-        sm:flex-row items-end sm:items-center
-        flex justify-between px-3 py-2 sm:py-3
+      <header className={`
+        bg-neutral-50 dark:bg-neutral-900
         border-b border-neutral-300 dark:border-neutral-600
       `}>
-        <div className="w-full">
-          <Link to="/">
-            <h1 className={`
-              sm:pl-12 sm:w-auto py-2 sm:py-0 print:pl-0
-              w-full text-2xl text-right sm:text-left
-              text-slate-900 dark:text-slate-200
-              tracking-tight
-            `}>Circuitscan</h1>
-          </Link>
-        </div>
-        <div className="flex space-x-4 place-items-center print:hidden">
-          <form onSubmit={handleSearch}>
-            <input
-              className={`${clsInput} min-w-72 focus:min-w-80 transition-all`}
-              type="search"
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-              placeholder="Go to Contract Address..."
-            />
-          </form>
+        <div id="logo" className={`
+          px-3 py-2 sm:py-3
+          max-w-7xl mx-auto
+          flex-col sm:flex-row items-end sm:items-center
+          flex justify-between
+        `}>
+          <div className="w-full">
+            <Link to="/">
+              <h1 className={`
+                sm:pl-12 sm:w-auto py-2 sm:py-0 print:pl-0
+                w-full text-2xl text-right sm:text-left
+                text-slate-900 dark:text-slate-200
+                tracking-tight
+              `}>Circuitscan</h1>
+            </Link>
+          </div>
+          <div className="flex space-x-4 place-items-center print:hidden">
+            <form onSubmit={handleSearch}>
+              <input
+                className={`${clsInput} min-w-72 focus:min-w-80 transition-all`}
+                type="search"
+                value={searchAddress}
+                onChange={(e) => setSearchAddress(e.target.value)}
+                placeholder="Go to Contract Address..."
+              />
+            </form>
+          </div>
         </div>
       </header>
       <Outlet />

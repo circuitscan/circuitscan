@@ -1,6 +1,7 @@
 
 export default function Card({ children }) {
   return (<div className={`
+    max-w-7xl xl:mx-auto
     mx-3 my-6 p-6 border rounded-md
     bg-neutral-100 border-neutral-300
     dark:bg-neutral-900 dark:border-neutral-600

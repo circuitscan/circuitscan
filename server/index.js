@@ -247,6 +247,7 @@ async function getVerified(event) {
   }
 }
 
+// TODO cache result to avoid double build on deploy
 async function build(event, returnDirect) {
   const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
   for(let file of Object.keys(event.payload.files)) {

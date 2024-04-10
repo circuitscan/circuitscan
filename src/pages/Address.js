@@ -93,7 +93,7 @@ export function Address() {
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {isValid ? (<>
-      <div className="p-6 pb-0">
+      <div className="px-4 pt-6 pb-0 max-w-7xl mx-auto xl:px-0">
         <h2 className="text-l text-ellipsis overflow-hidden mb-3">
           {parsedData && !loadMore && <div className="inline-block mr-1 align-middle">
             <div className={`
@@ -169,9 +169,6 @@ export function Address() {
           </div>
         </Card>
       </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
-        <div className="p-6">
-          This contract has been verified on {deployedChain.blockExplorers.default.name} but the circuit has not yet been verified here.
-        </div>
         <Card>
           <CodeBlock
             code={parsedData.source.chains[chainParam]}
