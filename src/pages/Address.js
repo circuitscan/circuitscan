@@ -74,15 +74,26 @@ export function Address() {
 
   async function handleSubmit(event) {
     toast.loading('Processing verification...');
-    const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
+    const resultBuild = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
+      ...event,
+      action: 'build',
+    }});
+    // Difference between local Docker/AWS deployed
+    const built = 'body' in resultBuild ? JSON.parse(resultBuild.body) : resultBuild;
+
+    const resultVerify = await post(import.meta.env.VITE_API_URL, { payload: {
       ...event,
       action: 'verify',
       address,
       chainId: chainParam,
+      signature: built.signature,
+      contract: built.solidityCode,
     }});
+    const verified = 'body' in resultVerify ? JSON.parse(resultVerify.body) : resultVerify;
+
     setData({
       ...data,
-      verified: 'body' in result ? JSON.parse(result.body) : result,
+      verified,
     });
     toast.dismiss();
     window.scrollTo(0,0);

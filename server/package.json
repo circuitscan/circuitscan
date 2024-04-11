@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.540.0",
     "@nomicfoundation/hardhat-verify": "^2.0.5",
-    "circomkit": "^0.0.24",
     "diff": "5.2.0",
+    "pg": "^8.11.5",
     "viem": "2.x"
   }
 }

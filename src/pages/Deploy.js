@@ -112,6 +112,7 @@ export function Deploy() {
         if(json1.errorMessage.indexOf('waiting for a minute') > -1) {
           setTimeout(verifyContract, 5000);
         }
+        return;
       }
       const {guid} = 'body' in json1 ? JSON.parse(json1.body) : json1;
       let intervalCount = 0;
@@ -144,11 +145,13 @@ export function Deploy() {
           toast.dismiss();
           toast.loading('Verifying circuit...');
 
-          const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
+          const result = await post(import.meta.env.VITE_API_URL, { payload: {
             ...formEvent,
             action: 'verify',
             address: data.contractAddress,
             chainId: String(chainId),
+            signature: compiled.signature,
+            contract: compiled.solidityCode,
           }});
           if('errorType' in result) {
             toast.dismiss();

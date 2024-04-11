@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { CodeBracketSquareIcon, PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 import Card from '../components/Card.js';
+import Newest from '../components/Newest.js';
 import {clsButton, clsIconA} from '../components/Layout.js';
 
 export function Home() {
@@ -33,6 +34,7 @@ export function Home() {
         </a>
       </p>
     </Card>
+    <Newest />
     <Card>
       <h3 className="text-xl p-6 pb-0">Example verifiers</h3>
       <ul className="p-6 pl-9 list-disc">

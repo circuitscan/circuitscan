@@ -35,10 +35,14 @@ $ yarn dev
 ### Local Server
 
 ```
-# Configure Etherscan, AWS DynamoDB
-# and change VITE_API_URL`, `VITE_API_URL_BIG` to `/api`
+# Configure Etherscan, Postgres, Signer
+# and change VITE_API_URL to `/api`
+# and change VITE_API_URL_CIRCOM to `/build-circom`
 # to use the local running docker container through vite proxy
 $ vim .env
+
+# Init database (modify command with your connection settings)
+$ psql < migrations/000-init.sql
 
 # Build server lambda docker image
 $ yarn build:server

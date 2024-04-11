@@ -2,11 +2,14 @@ import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {Circomkit} from 'circomkit';
+import { privateKeyToAccount } from 'viem/accounts';
 
 import { compileSolidityContract } from './solc.js';
 
 const BUILD_NAME = 'verify_circuit';
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
+
+const account = privateKeyToAccount(process.env.SIGNER_PRIVATE_KEY);
 
 export async function handler(event) {
   if('body' in event) {
@@ -21,7 +24,6 @@ export async function handler(event) {
   }
 }
 
-// TODO sign the result
 async function build(event) {
   const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
   const dirPtau = mkdtempSync(join(tmpdir(), 'ptau-'));
@@ -76,6 +78,15 @@ async function build(event) {
     body: JSON.stringify({
       solidityCode,
       compiled,
+      signature: await account.signMessage({ message: JSON.stringify({
+        files: event.payload.files,
+        file: event.payload.file,
+        pubs: event.payload.pubs,
+        params: event.payload.params,
+        tpl: event.payload.tpl,
+        protocol: event.payload.protocol,
+        solidityCode,
+      })}),
     }),
   };
 }

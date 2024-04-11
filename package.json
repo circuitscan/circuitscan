@@ -13,7 +13,7 @@
     "dev:server": "docker run -p 9000:8080 --env-file ./.env --rm circomscan_lambda",
     "dev:lambda-circom": "docker run -p 9001:8080 --env-file ./.env --rm circuitscan_lambda_circom",
     "deploy:server": "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 664190027399.dkr.ecr.us-west-2.amazonaws.com && docker tag circomscan_lambda:latest 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest && docker push 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest",
-    "deploy:lambda-circom": "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 664190027399.dkr.ecr.us-west-2.amazonaws.com && docker tag circuitscan_lambda_circom:latest 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest && docker push 664190027399.dkr.ecr.us-west-2.amazonaws.com/circomscan:latest",
+    "deploy:lambda-circom": "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 664190027399.dkr.ecr.us-west-2.amazonaws.com && docker tag circuitscan_lambda_circom:latest 664190027399.dkr.ecr.us-west-2.amazonaws.com/circuitscan_lambda_circom:latest && docker push 664190027399.dkr.ecr.us-west-2.amazonaws.com/circuitscan_lambda_circom:latest",
     "deploy:frontend": "rm -rf dist/ && vite build && aws s3 rm s3://circuitscan.clonk.me/ --recursive && aws s3 sync dist/ s3://circuitscan.clonk.me/"
   },
   "dependencies": {

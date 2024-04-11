@@ -1,27 +1,24 @@
-import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
-import {join} from 'node:path';
-import {tmpdir} from 'node:os';
-import {Circomkit} from 'circomkit';
 import {diffTrimmedLines} from 'diff';
+import pg from 'pg';
 import {isAddress} from 'viem';
 import {holesky, sepolia} from 'viem/chains';
-import {DynamoDBClient, PutItemCommand, GetItemCommand} from '@aws-sdk/client-dynamodb';
+import {recoverMessageAddress} from 'viem/utils';
 import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan.js";
 
-import { compileSolidityContract } from './solc.js';
 import {
   standardJson,
   findContractName,
 } from './etherscan.js';
 
-const BUILD_NAME = 'verify_circuit';
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
 
-const db = new DynamoDBClient({ region: "us-west-2" });
-const TableName = 'circuitscan1';
-
+const pool = new pg.Pool({
+  connectionString: process.env.PG_CONNECTION,
+});
+const TABLE_SOURCES = 'solidity_sources';
+const TABLE_VERIFIED = 'verified_circuit';
 
 const chains = [
   {
@@ -42,12 +39,12 @@ export async function handler(event) {
     event = JSON.parse(event.body);
   }
   switch(event.payload.action) {
+    case 'newest':
+      return getNewest(event);
     case 'get-status':
       return getStatus(event);
     case 'verify':
       return verify(event);
-    case 'build':
-      return build(event);
     case 'verify-contract':
       return verifyContract(event);
     case 'check-verify-contract':
@@ -57,6 +54,13 @@ export async function handler(event) {
   }
 }
 
+async function getNewest(event) {
+  const response = {foo:123};
+  return {
+    response,
+  };
+}
+
 async function getStatus(event) {
   let verified;
   if(event.payload.chainId) {
@@ -64,8 +68,10 @@ async function getStatus(event) {
   }
   const source = await contractSource(event);
   return {
-    verified: verified && verified.body && JSON.parse(verified.body),
-    source: source && source.body && JSON.parse(source.body),
+    verified: verified && verified.body &&
+      (typeof verified.body === 'string' ? JSON.parse(verified.body) : verified.body),
+    source: source && source.body &&
+      (typeof source.body === 'string' ? JSON.parse(source.body) : source.body),
   };
 }
 
@@ -148,22 +154,22 @@ async function contractSource(event) {
   if(!isAddress(event.payload.address))
     throw new Error('invalid_address');
 
-  let existing;
+  let query;
   try {
-    existing = await db.send(new GetItemCommand({
-      TableName,
-      Key: { id: { S: `${event.payload.address}-ogSource` } },
-    }));
+    query = await pool.query(`SELECT * FROM ${TABLE_SOURCES} WHERE address = $1`,
+    [
+      Buffer.from(event.payload.address.slice(2), 'hex'),
+    ]);
   } catch(error) {
-    if(error.errorType !== 'ResourceNotFoundException')
-      throw error;
+    // TODO
+    throw error;
   }
 
   // TODO ddos protection
-  if(!event.forceUpdate && existing && 'Item' in existing) {
-    const foundChains = existing.Item.chains.M;
-    for(let chain of Object.keys(foundChains)) {
-      foundChains[chain] = foundChains[chain].S;
+  if(!event.forceUpdate && query.rows.length) {
+    const foundChains = {};
+    for(let row of query.rows) {
+      foundChains[row.chainid] = row.source_code;
     }
     return {
       statusCode: 200,
@@ -187,27 +193,25 @@ async function contractSource(event) {
     if(!data.result[0].SourceCode) continue;
 
     const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
-    foundChains[String(chains[i].chain.id)] =
-      inner.sources[Object.keys(inner.sources)[0]].content;
+    const source = inner.sources[Object.keys(inner.sources)[0]].content;
+    foundChains[String(chains[i].chain.id)] = source;
+    await pool.query(`
+      INSERT INTO ${TABLE_SOURCES} (chainid, address, source_code)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (chainid, address)
+        DO UPDATE SET
+            source_code = EXCLUDED.source_code`,
+      [
+        chains[i].chain.id,
+        Buffer.from(event.payload.address.slice(2), 'hex'),
+        source,
+      ]);
   }
 
   if(!Object.keys(foundChains).length) return {
     statusCode: 404,
     body: JSON.stringify({error:'not_verified'}),
   };
-
-  await db.send(new PutItemCommand({
-    TableName,
-    Item: {
-      id: { S: `${event.payload.address}-ogSource` },
-      chains: {
-        M: Object.keys(foundChains).reduce((out, cur) => {
-          out[cur] = { S: foundChains[cur] };
-          return out;
-        }, {}),
-      },
-    },
-  }));
 
   return {
     statusCode: 200,
@@ -228,92 +232,38 @@ async function getVerified(event) {
   if(!chain)
     throw new Error('invalid_chainId');
 
-  let existing;
+  let query;
   try {
-    existing = await db.send(new GetItemCommand({
-      TableName,
-      Key: { id: { S: `${event.payload.address}-${event.payload.chainId}-verified` } },
-    }));
+    query = await pool.query(`
+      SELECT * FROM ${TABLE_VERIFIED} WHERE chainid = $1 AND address = $2
+    `,
+    [
+      event.payload.chainId,
+      Buffer.from(event.payload.address.slice(2), 'hex'),
+    ]);
   } catch(error) {
-    if(error.errorType !== 'ResourceNotFoundException')
-      throw error;
+    // TODO
+    throw error;
   }
 
-  if(existing && 'Item' in existing) {
+  if(query.rows.length) {
     return {
       statusCode: 200,
-      body: existing.Item.body.S,
+      body: query.rows[0].payload,
     };
   }
 }
 
-// TODO cache result to avoid double build on deploy
-async function build(event, returnDirect) {
-  const dirCircuits = mkdtempSync(join(tmpdir(), 'circuits-'));
-  const dirPtau = mkdtempSync(join(tmpdir(), 'ptau-'));
-  const dirBuild = mkdtempSync(join(tmpdir(), 'build-'));
-  for(let file of Object.keys(event.payload.files)) {
-    let code = event.payload.files[file].code;
-    const imports = Array.from(code.matchAll(/include "([^"]+)";/g));
-    for(let include of imports) {
-      const filename = include[1].split('/').at(-1);
-      code = code.replaceAll(include[0], `include "${filename}";`);
-    }
-    writeFileSync(join(dirCircuits, file), code);
-  }
-
-  const config = {
-    dirCircuits,
-    dirPtau,
-    dirBuild,
-    protocol: event.payload.protocol,
-  };
-
-  if(config.protocol === 'groth16') {
-    Object.assign(config, {
-      prime: 'bn128',
-      groth16numContributions: 1,
-      groth16askForEntropy: false,
-    });
-  }
-
-  const circomkit = new Circomkit(config);
-
-  await circomkit.compile(BUILD_NAME, {
-    file: event.payload.file.replace('.circom', ''),
-    template: event.payload.tpl,
-    params: JSON.parse(`[${event.payload.params}]`),
-    pubs: event.payload.pubs.split(',').map(x=>x.trim()).filter(x=>!!x),
-  });
-
-  await circomkit.setup(BUILD_NAME);
-  await circomkit.vkey(BUILD_NAME);
-  const contractPath = await circomkit.contract(BUILD_NAME);
-  let solidityCode = readFileSync(contractPath, {encoding: 'utf8'});
-  // XXX: plonk output has an errant hardhat debug include?
-  if(solidityCode.indexOf(HARDHAT_IMPORT) > -1) {
-    solidityCode = solidityCode.replace(HARDHAT_IMPORT, '');
-    writeFileSync(contractPath, solidityCode);
-  }
-  if(returnDirect) return solidityCode;
-
-  const compiled = await compileSolidityContract(contractPath);
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      solidityCode,
-      compiled,
-    }),
-  };
-}
-
-// TODO ddos protection!
 async function verify(event) {
   if(!event.payload.chainId)
     throw new Error('missing_chainId');
   const chain = findChain(event.payload.chainId);
   if(!chain)
     throw new Error('invalid_chainId');
+  if(!event.payload.contract)
+    throw new Error('missing_contract');
+  if(!event.payload.signature)
+    throw new Error('missing_signature');
 
   const verified = await getVerified(event);
   if(verified) return verified;
@@ -322,8 +272,22 @@ async function verify(event) {
   if(ogSource.statusCode !== 200) return ogSource;
   const ogObj = JSON.parse(ogSource.body);
 
+  const signer = await recoverMessageAddress({
+    signature: event.payload.signature,
+    message: JSON.stringify({
+      files: event.payload.files,
+      file: event.payload.file,
+      pubs: event.payload.pubs,
+      params: event.payload.params,
+      tpl: event.payload.tpl,
+      protocol: event.payload.protocol,
+      solidityCode: event.payload.contract,
+    }),
+  });
+  if(signer !== process.env.SIGNER_ADDRESS)
+    throw new Error('invalid_signature');
 
-  const contract = await build(event, true);
+  const contract = event.payload.contract;
   const diff = diffTrimmedLines(ogObj.chains[event.payload.chainId], contract);
 
   let acceptableDiff = true;
@@ -373,27 +337,31 @@ async function verify(event) {
     acceptableDiff = false;
   }
 
-  const body = JSON.stringify({
+  const body = {
     payload: event.payload,
     contract,
     ogSource: ogObj.chains[event.payload.chainId],
     chainId: event.payload.chainId,
     diff,
     acceptableDiff,
-  });
+  };
 
   if(acceptableDiff) {
-    await db.send(new PutItemCommand({
-      TableName,
-      Item: {
-        id: { S: `${event.payload.address}-${event.payload.chainId}-verified` },
-        body: { S: body },
-      },
-    }));
+    await pool.query(`
+      INSERT INTO ${TABLE_VERIFIED} (chainid, address, payload)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (chainid, address)
+        DO UPDATE SET
+            payload = EXCLUDED.payload`,
+      [
+        event.payload.chainId,
+        Buffer.from(event.payload.address.slice(2), 'hex'),
+        body,
+      ]);
   }
 
   return {
     statusCode: 200,
-    body,
+    body: JSON.stringify(body),
   };
 }
