@@ -38,8 +38,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <DarkModeDetector
-          dark={{ theme: darkTheme({ accentColor: '#cc2ab9'}) }}
-          light={{ theme: lightTheme({ accentColor: '#06a01c'}) }}
+          dark={{ theme: darkTheme({ accentColor: '#ab7663'}) }}
+          light={{ theme: lightTheme({ accentColor: '#55899c'}) }}
         >
           <RainbowKitProvider modalSize="compact">
             <Router />

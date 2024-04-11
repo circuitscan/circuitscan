@@ -21,13 +21,13 @@ export function Home() {
       <p className="p-6">
         <Link to="/deploy">
           <button className={clsButton}>
-            <PaperAirplaneIcon className="h-9 w-9 text-red-500" />
+            <PaperAirplaneIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
             Deploy Circuit
           </button>
         </Link>
         <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
           <button className={clsButton}>
-            <CodeBracketSquareIcon className="h-9 w-9 text-blue-500" />
+            <CodeBracketSquareIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
             View Github Repo
           </button>
         </a>
