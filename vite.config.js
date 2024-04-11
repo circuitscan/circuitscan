@@ -5,6 +5,11 @@ export default defineConfig({
   server: {
     proxy: {
       // Needed to defeat CORS
+      '/build-circom': {
+        target: 'http://localhost:9001', // Docker lambda server
+        changeOrigin: true, // needed for virtual hosted sites
+        rewrite: (path) => path.replace(/^\/build-circom/, '/2015-03-31/functions/function/invocations'),
+      },
       '/api': {
         target: 'http://localhost:9000', // Docker lambda server
         changeOrigin: true, // needed for virtual hosted sites

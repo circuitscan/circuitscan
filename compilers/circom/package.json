@@ -1,0 +1,9 @@
+{
+  "name": "lambda-circom-compiler",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "circomkit": "^0.0.24",
+    "viem": "2.x"
+  }
+}

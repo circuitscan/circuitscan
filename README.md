@@ -7,6 +7,7 @@
 ## TODO
 
 - [ ] support more than just latest circom version
+- [ ] add support for noir verifiers too
 - [ ] ddos protection! / account system
 - [ ] api for programmatic verification / command in circomkit fo ci
 - [ ] allow for contract name changes?

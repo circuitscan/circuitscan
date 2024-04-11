@@ -41,7 +41,7 @@ export function Deploy() {
   async function handleSubmit(event) {
     setFormEvent(event);
     toast.loading('Compiling circuit...');
-    const result = await post(import.meta.env.VITE_API_URL_BIG, { payload: {
+    const result = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
       ...event,
       action: 'build',
     }});
