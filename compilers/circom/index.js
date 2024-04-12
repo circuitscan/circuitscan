@@ -1,13 +1,21 @@
 import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
+import pg from 'pg';
 import {Circomkit} from 'circomkit';
+import {keccak256, toHex} from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 import { compileSolidityContract } from './solc.js';
+import {fullProve} from './prove.js';
 
 const BUILD_NAME = 'verify_circuit';
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
+const TABLE_PROVERS = 'circom_provers';
+
+const pool = new pg.Pool({
+  connectionString: process.env.PG_CONNECTION,
+});
 
 const account = privateKeyToAccount(process.env.SIGNER_PRIVATE_KEY);
 
@@ -19,9 +27,35 @@ export async function handler(event) {
   switch(event.payload.action) {
     case 'build':
       return build(event);
+    case 'prove':
+      return prove(event);
     default:
       throw new Error('invalid_command');
   }
+}
+
+async function prove(event) {
+  if(!event.payload.circuitHash || !(typeof event.payload.circuitHash === 'string'))
+    throw new Error('invalid_circuitHash');
+
+  const query = await pool.query(
+    `SELECT * FROM ${TABLE_PROVERS} WHERE circuit_hash = $1`,
+    [
+      Buffer.from(event.payload.circuitHash.slice(2), 'hex'),
+    ]
+  );
+
+  const result = await fullProve(
+    event.payload.input,
+    event.payload.protocol,
+    query.rows[0].wasm,
+    query.rows[0].pkey,
+  );
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(result),
+  };
 }
 
 async function build(event) {
@@ -72,12 +106,32 @@ async function build(event) {
     writeFileSync(contractPath, solidityCode);
   }
 
+  const circuitHash = keccak256(toHex(JSON.stringify({
+    files: event.payload.files,
+    file: event.payload.file,
+    pubs: event.payload.pubs,
+    params: event.payload.params,
+    tpl: event.payload.tpl,
+    protocol: event.payload.protocol,
+  })));
+
+  await pool.query(`
+    INSERT INTO ${TABLE_PROVERS} (circuit_hash, wasm, pkey)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (circuit_hash) DO NOTHING`,
+    [
+      Buffer.from(circuitHash.slice(2), 'hex'),
+      readFileSync(join(dirBuild, BUILD_NAME, BUILD_NAME + '_js', BUILD_NAME + '.wasm')),
+      readFileSync(join(dirBuild, BUILD_NAME, event.payload.protocol + '_pkey.zkey')),
+    ]);
+
   const compiled = await compileSolidityContract(contractPath);
   return {
     statusCode: 200,
     body: JSON.stringify({
       solidityCode,
       compiled,
+      circuitHash,
       signature: await account.signMessage({ message: JSON.stringify({
         files: event.payload.files,
         file: event.payload.file,

@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "circomkit": "^0.0.24",
+    "pg": "^8.11.5",
     "viem": "2.x"
   }
 }

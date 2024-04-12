@@ -3,13 +3,20 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { toast } from 'react-hot-toast';
 import ReactDiffViewer from 'react-diff-viewer';
-import { isAddress } from 'viem';
+import {
+  isAddress,
+  keccak256,
+  toHex,
+  createPublicClient,
+  http,
+  encodeFunctionData,
+} from 'viem';
 import {
   ArrowTopRightOnSquareIcon,
   DocumentDuplicateIcon,
   CheckIcon,
   XMarkIcon
-} from '@heroicons/react/24/outline'
+} from '@heroicons/react/24/outline';
 
 import useFetchJson from '../components/useFetchJson.js';
 import useFetchPost from '../components/useFetchPost.js';
@@ -17,7 +24,10 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
-import {clsIconA} from '../components/Layout.js';
+import {clsIconA, clsButton} from '../components/Layout.js';
+import Groth16Verifier from '../abi/Groth16Verifier.json';
+import PlonkVerifier from '../abi/PlonkVerifier.json';
+import FflonkVerifier from '../abi/FflonkVerifier.json';
 import {findChain, setClipboard} from '../utils.js';
 
 // TODO form for submitting a proof to be verified
@@ -70,6 +80,41 @@ export function Address() {
       deployedChain = findChain(chainParam);
       loadMore = false;
     }
+  }
+
+  async function prove() {
+    console.log(parsedData.verified.circuitHash);
+    const resultProve = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
+      action: 'prove',
+      circuitHash: parsedData.verified.circuitHash,
+      protocol: parsedData.verified.payload.protocol,
+      input: {
+        in: [2,3],
+      }
+    }});
+    // Difference between local Docker/AWS deployed
+    const result = 'body' in resultProve ? JSON.parse(resultProve.body) : resultProve;
+    const calldata = JSON.parse('[' + result.calldata + ']');
+    console.log(result, calldata, deployedChain);
+
+    const publicClient = createPublicClient({
+      chain: deployedChain,
+      transport: http(),
+    });
+
+    const funcData = encodeFunctionData({
+      abi: Groth16Verifier,
+      functionName: 'verifyProof',
+      args: calldata,
+    });
+
+    const callResult = await publicClient.call({
+      data: funcData,
+      to: address,
+    });
+    const success = parseInt(callResult.data) > 0;
+    console.log(success);
+
   }
 
   async function handleSubmit(event) {
@@ -205,6 +250,10 @@ export function Address() {
               <dt className="text-l font-bold">Pubs</dt>
               <dd className="pl-6">{parsedData.verified.payload.pubs || <span className="italic">None</span>}</dd>
             </dl>
+            <button
+              className={clsButton}
+              onClick={prove}
+            >Generate Proof...</button>
           </Card>
 
           <Card>

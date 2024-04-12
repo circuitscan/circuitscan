@@ -1,6 +1,6 @@
 import {diffTrimmedLines} from 'diff';
 import pg from 'pg';
-import {isAddress} from 'viem';
+import {isAddress, keccak256, toHex} from 'viem';
 import {holesky, sepolia} from 'viem/chains';
 import {recoverMessageAddress} from 'viem/utils';
 import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan.js";
@@ -356,6 +356,15 @@ async function verify(event) {
     acceptableDiff = false;
   }
 
+  const circuitHash = keccak256(toHex(JSON.stringify({
+    files: event.payload.files,
+    file: event.payload.file,
+    pubs: event.payload.pubs,
+    params: event.payload.params,
+    tpl: event.payload.tpl,
+    protocol: event.payload.protocol,
+  })));
+
   const body = {
     payload: event.payload,
     contract,
@@ -363,12 +372,13 @@ async function verify(event) {
     chainId: event.payload.chainId,
     diff,
     acceptableDiff,
+    circuitHash,
   };
 
   if(acceptableDiff) {
     await pool.query(`
-      INSERT INTO ${TABLE_VERIFIED} (chainid, address, payload)
-        VALUES ($1, $2, $3)
+      INSERT INTO ${TABLE_VERIFIED} (chainid, address, payload, circuit_hash)
+        VALUES ($1, $2, $3, $4)
         ON CONFLICT (chainid, address)
         DO UPDATE SET
             payload = EXCLUDED.payload`,
@@ -376,6 +386,7 @@ async function verify(event) {
         event.payload.chainId,
         Buffer.from(event.payload.address.slice(2), 'hex'),
         body,
+        Buffer.from(circuitHash.slice(2), 'hex'),
       ]);
   }
 
