@@ -55,10 +55,29 @@ export async function handler(event) {
 }
 
 async function getNewest(event) {
-  const response = {foo:123};
-  return {
-    response,
-  };
+  if(isNaN(event.payload.offset) || event.payload.offset < 0)
+    throw new Error('invalid_offset');
+  if(isNaN(event.payload.limit)
+      || event.payload.limit < 0
+      || event.payload.limit > 1000)
+    throw new Error('invalid_limit');
+
+  let query;
+  try {
+    query = await pool.query(`
+      SELECT chainid, address, created_at FROM ${TABLE_VERIFIED}
+        ORDER BY id DESC
+        LIMIT ${Math.floor(event.payload.limit)}
+        OFFSET ${Math.floor(event.payload.offset)}
+    `);
+  } catch(error) {
+    // TODO
+    throw error;
+  }
+  return query.rows.map(row => {
+    row.address = '0x' + row.address.toString('hex');
+    return row;
+  });
 }
 
 async function getStatus(event) {

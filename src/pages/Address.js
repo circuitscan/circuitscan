@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import { toast } from 'react-hot-toast';
 import ReactDiffViewer from 'react-diff-viewer';
 import { isAddress } from 'viem';
-import * as chains from 'viem/chains';
 import {
   ArrowTopRightOnSquareIcon,
   DocumentDuplicateIcon,
@@ -18,7 +17,8 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
-import {clsIconA, clsButton} from '../components/Layout.js';
+import {clsIconA} from '../components/Layout.js';
+import {findChain, setClipboard} from '../utils.js';
 
 // TODO form for submitting a proof to be verified
 export function Address() {
@@ -226,7 +226,7 @@ export function Address() {
               </Card>
           </>)}
 
-          {parsedData.verified.diff.length > 1 && <>
+          {parsedData.verified.ogSource !== parsedData.verified.contract && <>
             <Card>
               <h3 className="text-xl font-bold">Solidity Contract Diff ({parsedData.verified.acceptableDiff ? 'Acceptable' : 'Not Accepted'})</h3>
               <div
@@ -260,26 +260,5 @@ export function Address() {
       <p>Invalid Address!</p>
     </>)}
   </div>);
-}
-
-function findChain(chainId) {
-  for(let chain of Object.keys(chains)) {
-    if(Number(chainId) === chains[chain].id) return chains[chain];
-  }
-}
-
-
-async function setClipboard(text) {
-  if (!navigator.clipboard) {
-    toast.error('Clipboard API is not available in this browser.');
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
-  } catch (err) {
-    toast.error('Failed to copy to clipboard');
-  }
 }
 

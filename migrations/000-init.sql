@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS verified_circuit (
     id SERIAL PRIMARY KEY,
     chainid BIGINT NOT NULL,
     address BYTEA NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     payload JSONB
 );
 
