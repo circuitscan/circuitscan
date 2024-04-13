@@ -25,10 +25,7 @@ import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
 import {clsIconA, clsButton} from '../components/Layout.js';
-import Groth16Verifier from '../abi/Groth16Verifier.json';
-import PlonkVerifier from '../abi/PlonkVerifier.json';
-import FflonkVerifier from '../abi/FflonkVerifier.json';
-import {findChain, setClipboard} from '../utils.js';
+import {findChain, setClipboard, verifierABI} from '../utils.js';
 
 // TODO form for submitting a proof to be verified
 export function Address() {
@@ -83,19 +80,21 @@ export function Address() {
   }
 
   async function prove() {
+    const protocol = parsedData.verified.payload.protocol;
     console.log(parsedData.verified.circuitHash);
     const resultProve = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
       action: 'prove',
       circuitHash: parsedData.verified.circuitHash,
-      protocol: parsedData.verified.payload.protocol,
+      protocol,
       input: {
         in: [2,3],
       }
     }});
     // Difference between local Docker/AWS deployed
     const result = 'body' in resultProve ? JSON.parse(resultProve.body) : resultProve;
-    const calldata = JSON.parse('[' + result.calldata + ']');
-    console.log(result, calldata, deployedChain);
+    console.log(result);
+    const calldata = JSON.parse(result.calldata);
+    console.log(calldata, deployedChain);
 
     const publicClient = createPublicClient({
       chain: deployedChain,
@@ -103,7 +102,7 @@ export function Address() {
     });
 
     const funcData = encodeFunctionData({
-      abi: Groth16Verifier,
+      abi: verifierABI(protocol, result.proof.publicSignals.length),
       functionName: 'verifyProof',
       args: calldata,
     });
