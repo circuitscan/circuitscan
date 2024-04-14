@@ -311,12 +311,14 @@ export function Address() {
                 </p>
                 <textarea
                   className={`${clsInput} min-h-32`}
-                  defaultValue={JSON.stringify(JSON.parse(proofOutput.calldata), null, 2)}
+                  value={JSON.stringify(JSON.parse(proofOutput.calldata), null, 2)}
+                  readonly
                 />
                 <p className="text-l font-bold">Public Signals</p>
                 <textarea
                   className={`${clsInput} min-h-32`}
-                  defaultValue={JSON.stringify(proofOutput.proof.publicSignals, null, 2)}
+                  value={JSON.stringify(proofOutput.proof.publicSignals, null, 2)}
+                  readonly
                 />
               </>}
             </Card>
