@@ -11,6 +11,19 @@ export default function CircuitForm({
 }) {
   const dataState = useState({});
   const bundleState = useState();
+  const [circomlib, setCircomlib] = useState();
+  useEffect(() => {
+    async function loadCircomlib() {
+      try {
+        const loaded = await import('../circomlib.json');
+        setCircomlib(loaded.default);
+      } catch(error) {
+        console.error(error);
+        setCircomlib('error');
+      }
+    }
+    loadCircomlib();
+  }, []);
 
   const [tpl, setTpl] = useState('');
   const [params, setParams] = useState('');
@@ -46,8 +59,27 @@ export default function CircuitForm({
       protocol,
     });
   }
+
+  if(!circomlib) {
+    return (
+      <Card>
+        <div className="flex flex-col w-full content-center items-center">
+          <p className="p-6">Loading circomlib...</p>
+        </div>
+      </Card>
+    );
+  } else if(circomlib === 'error') {
+    return (
+      <Card>
+        <div className="flex flex-col w-full content-center items-center">
+          <p className="p-6">Error loading circomlib!</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (<form onSubmit={handleSubmit}>
-    <UploadCode {...{dataState, bundleState}} />
+    <UploadCode {...{dataState, bundleState, circomlib}} />
     {bundleState[0] && <>
       <div>
         <label className="m-4 flex">

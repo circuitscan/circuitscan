@@ -149,7 +149,7 @@ function evaluateExpression(expression, variables) {
     };
 
     // Tokenize the expression
-    const tokens = expression.match(/(?:[a-z]+|\d+|[+*/%-])/gi);
+    const tokens = expression.match(/(?:[a-z0-9_]+|\d+|[+*/%-])/gi);
 
     // Stack for values and operators
     const values = [];

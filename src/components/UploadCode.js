@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
 
-function UploadCode({ dataState, filepath, includepath, bundleState }) {
+function UploadCode({ dataState, filepath, includepath, bundleState, circomlib }) {
   // State to store the file content
   const [fileContent, setFileContent] = useState('');
   const [selectedName, setSelectedName] = useState();
@@ -10,7 +10,14 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
   const filename = filepath && filepath.split('/').at(-1);
   const inState =
     (filename in dataState[0] && dataState[0][filename].code !== null)
-    || fileContent;
+    || !!fileContent;
+
+  useEffect(() => {
+    if(inState && !importFilenames && circomlib && (filename in circomlib)) {
+      setImportFilenames(getImports(circomlib[filename]));
+    }
+  }, [filepath, circomlib, dataState[0]]);
+
   includepath = includepath || '';
 
   useEffect(() => {
@@ -42,10 +49,10 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
     // When the file is successfully read, update the state with its content
     reader.onload = (e) => {
       setFileContent(e.target.result);
-      const imports = Array.from(e.target.result.matchAll(/include "([^"]+)";/g));
+      const imports = getImports(e.target.result);
 
-      const templates = Array.from(e.target.result.matchAll(/template ([^\(]+)/g));
-      setImportFilenames(imports.map((match) => match[1]));
+      const templates = getTemplates(e.target.result);
+      setImportFilenames(imports);
       dataState[1](state => {
         const out = {};
         // When a new root file is loaded, don't append last state
@@ -56,14 +63,9 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
         out[name] = {
           code: e.target.result,
           includepath,
-          templates: templates.map(tpl => tpl[1]),
+          templates,
         };
-        for(let match of imports) {
-          const name = match[1].split('/').at(-1);
-          if(!(name in state)) {
-            out[name] = { code: null };
-          }
-        }
+        Object.assign(out, processImports(out, imports, circomlib, includepath));
         return out;
       });
     };
@@ -79,9 +81,11 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
     && dataState[0][filename].includepath !== includepath
   ) {
     return (
-      <div className="flex">
-        <CheckIcon className="h-6 w-6 text-blue-500" />
-        <span>{filepath}</span>
+      <div>
+        <div className="flex">
+          <CheckIcon className="h-6 w-6 text-blue-500" />
+          <span>{filepath}</span>
+        </div>
       </div>
     );
   }
@@ -100,7 +104,7 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
           {importFilenames.map((path, index) =>
             <li key={index}>
               <UploadCode
-                {...{dataState}}
+                {...{dataState, circomlib}}
                 includepath={`${includepath}:${index}`}
                 filepath={path}
               />
@@ -114,3 +118,31 @@ function UploadCode({ dataState, filepath, includepath, bundleState }) {
 
 export default UploadCode;
 
+function getImports(circomCode) {
+  return Array.from(circomCode.matchAll(/include "([^"]+)";/g)).map(x=>x[1]);
+}
+
+function getTemplates(circomCode) {
+  return Array.from(circomCode.matchAll(/template ([^\(]+)/g)).map(x=>x[1]);
+}
+
+function processImports(out, imports, circomlib, includepath) {
+  for(let i = 0; i < imports.length; i++) {
+    const match = imports[i];
+    const name = match.split('/').at(-1);
+    if(!(name in out)) {
+      if(name in circomlib) {
+        const childImports = getImports(circomlib[name]);
+        out[name] = {
+          code: circomlib[name],
+          includepath: `${includepath}:${i}`,
+          templates: getTemplates(circomlib[name]).map(tpl=>tpl[1]),
+        };
+        Object.assign(out, processImports(out, childImports, circomlib, includepath));
+      } else {
+        out[name] = { code: null };
+      }
+    }
+  }
+  return out;
+}

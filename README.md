@@ -11,8 +11,8 @@
 - [ ] ddos protection! / account system
 - [ ] api for programmatic verification / command in circomkit fo ci
 - [ ] allow for contract name changes?
-- [ ] form for submitting a proof to be verified
-- [ ] auto-include circomlib files in selector
+- [x] form for submitting a proof to be verified
+- [x] auto-include circomlib files in selector
 - [ ] fork/create new circuit
 
 ## Installation
