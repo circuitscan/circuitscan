@@ -22,6 +22,7 @@ export default function Newest() {
       },
     },
   );
+  if(data) console.log(data);
 
   async function loadNextPage() {
     toast.dismiss();
@@ -84,15 +85,20 @@ export default function Newest() {
                   to={`/chain/${row.chainid}/address/${row.address}`}
                 >
                   <span className={`
-                    inline-block pl-3 pr-2 py-1 mr-1
+                    inline-block pl-3 pr-2 py-1 mr-3
                     border rounded-full bg-neutral-200 dark:bg-neutral-900
                     border-neutral-400 dark:border-neutral-600
                     text-sm
                   `}>{findChain(row.chainid).name}</span>
                   <span className={`
                     text-ellipsis inline-block overflow-hidden
-                    mr-1
-                  `}>{row.address}</span>
+                    mr-1 grow
+                  `}>
+                    <span className="font-bold">
+                      {row.tpl}({row.params}) - {row.protocol}
+                    </span>
+                    <span className="text-sm block">{row.address}</span>
+                  </span>
                   <span className={`
                   `}>{(new Date(row.created_at)).toLocaleString()}</span>
                 </Link>

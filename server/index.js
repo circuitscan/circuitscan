@@ -65,10 +65,17 @@ async function getNewest(event) {
   let query;
   try {
     query = await pool.query(`
-      SELECT chainid, address, created_at FROM ${TABLE_VERIFIED}
-        ORDER BY id DESC
-        LIMIT ${Math.floor(event.payload.limit)}
-        OFFSET ${Math.floor(event.payload.offset)}
+      SELECT
+        chainid,
+        address,
+        created_at,
+        payload->'payload'->'tpl' as tpl,
+        payload->'payload'->'params' as params,
+        payload->'payload'->'protocol' as protocol
+      FROM ${TABLE_VERIFIED}
+      ORDER BY id DESC
+      LIMIT ${Math.floor(event.payload.limit)}
+      OFFSET ${Math.floor(event.payload.offset)}
     `);
   } catch(error) {
     // TODO
