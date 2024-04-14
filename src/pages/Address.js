@@ -24,11 +24,19 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
-import {clsIconA, clsButton} from '../components/Layout.js';
-import {findChain, setClipboard, verifierABI} from '../utils.js';
+import {clsIconA, clsButton, clsInput} from '../components/Layout.js';
+import {
+  findChain,
+  setClipboard,
+  verifierABI,
+  extractCircomTemplate,
+  inputTemplate,
+} from '../utils.js';
 
 // TODO form for submitting a proof to be verified
 export function Address() {
+  const [proofInputs, setProofInputs] = useState('{}');
+  const [proofOutput, setProofOutput] = useState();
   const navigate = useNavigate();
   const darkMode = useDarkMode();
   const {address, chain: chainParam} = useParams();
@@ -59,6 +67,7 @@ export function Address() {
 
   // TODO how to stop flikering using loadMore flag
   let parsedData, deployedChain, loadMore = true;
+  let templateDetails;
   if(data) {
     if('body' in data && typeof data.body === 'string') {
       parsedData = JSON.parse(data.body);
@@ -75,26 +84,50 @@ export function Address() {
     }
     if(chainParam) {
       deployedChain = findChain(chainParam);
+      if(parsedData && parsedData.verified) {
+        // TODO: memoize
+        templateDetails = extractCircomTemplate(
+          parsedData.verified.payload.files[parsedData.verified.payload.file].code,
+          parsedData.verified.payload.tpl,
+        );
+      }
       loadMore = false;
     }
   }
+  useEffect(() => {
+    if(parsedData && parsedData.verified && chainParam) {
+      setProofInputs(JSON.stringify(inputTemplate(
+        templateDetails,
+        parsedData.verified.payload.params,
+      ), null, 2));
+    }
+  }, [ data ]);
 
   async function prove() {
+    let inputs;
+    try {
+      inputs = JSON.parse(proofInputs);
+    } catch(error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.dismiss();
+    toast.loading('Generating proof...');
     const protocol = parsedData.verified.payload.protocol;
-    console.log(parsedData.verified.circuitHash);
     const resultProve = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
       action: 'prove',
       circuitHash: parsedData.verified.circuitHash,
       protocol,
-      input: {
-        in: [2,3],
-      }
+      input: inputs,
     }});
     // Difference between local Docker/AWS deployed
     const result = 'body' in resultProve ? JSON.parse(resultProve.body) : resultProve;
-    console.log(result);
+    if('errorType' in result) {
+      toast.dismiss();
+      toast.error(result.errorMessage);
+      return;
+    }
     const calldata = JSON.parse(result.calldata);
-    console.log(calldata, deployedChain);
 
     const publicClient = createPublicClient({
       chain: deployedChain,
@@ -112,7 +145,14 @@ export function Address() {
       to: address,
     });
     const success = parseInt(callResult.data) > 0;
-    console.log(success);
+    if(!success) {
+      toast.dismiss();
+      toast.error('Proof inputs failed to generate!');
+      return;
+    }
+    setProofOutput(result);
+    toast.dismiss();
+    toast.success('Proof generated successfully!');
 
   }
 
@@ -238,22 +278,49 @@ export function Address() {
       </> : data && parsedData.verified ? <>
         <div className="">
 
-          <Card>
-            <dl>
-              <dt className="text-l font-bold">Protocol</dt>
-              <dd className="pl-6">{parsedData.verified.payload.protocol}</dd>
-              <dt className="text-l font-bold">Template</dt>
-              <dd className="pl-6">{parsedData.verified.payload.tpl}</dd>
-              <dt className="text-l font-bold">Params</dt>
-              <dd className="pl-6">{parsedData.verified.payload.params || <span className="italic">None</span>}</dd>
-              <dt className="text-l font-bold">Pubs</dt>
-              <dd className="pl-6">{parsedData.verified.payload.pubs || <span className="italic">None</span>}</dd>
-            </dl>
-            <button
-              className={clsButton}
-              onClick={prove}
-            >Generate Proof...</button>
-          </Card>
+          <div className="flex flex-col sm:flex-row">
+            <Card>
+              <dl>
+                <dt className="text-l font-bold">Protocol</dt>
+                <dd className="pl-6">{parsedData.verified.payload.protocol}</dd>
+                <dt className="text-l font-bold">Template</dt>
+                <dd className="pl-6">{parsedData.verified.payload.tpl}</dd>
+                <dt className="text-l font-bold">Params</dt>
+                <dd className="pl-6">{parsedData.verified.payload.params || <span className="italic">None</span>}</dd>
+                <dt className="text-l font-bold">Pubs</dt>
+                <dd className="pl-6">{parsedData.verified.payload.pubs || <span className="italic">None</span>}</dd>
+              </dl>
+            </Card>
+            <Card>
+              <p className="text-l font-bold">Proof Input Signals</p>
+              <textarea
+                className={`${clsInput} min-h-32`}
+                onChange={(e) => setProofInputs(e.target.value)}
+                value={proofInputs}
+              />
+              <button
+                className={`
+                  ${clsButton}
+                  mt-3
+                `}
+                onClick={prove}
+              >Generate Proof</button>
+              {proofOutput && <>
+                <p className="text-l font-bold">
+                  verifyProof calldata
+                </p>
+                <textarea
+                  className={`${clsInput} min-h-32`}
+                  defaultValue={JSON.stringify(JSON.parse(proofOutput.calldata), null, 2)}
+                />
+                <p className="text-l font-bold">Public Signals</p>
+                <textarea
+                  className={`${clsInput} min-h-32`}
+                  defaultValue={JSON.stringify(proofOutput.proof.publicSignals, null, 2)}
+                />
+              </>}
+            </Card>
+          </div>
 
           <Card>
             <h3 className="text-xl font-bold">{parsedData.verified.payload.file}</h3>

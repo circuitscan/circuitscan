@@ -22,7 +22,6 @@ export default function Newest() {
       },
     },
   );
-  if(data) console.log(data);
 
   async function loadNextPage() {
     toast.dismiss();

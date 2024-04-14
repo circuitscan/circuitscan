@@ -36,9 +36,12 @@ export function Home() {
     </Card>
     <Newest />
     <Card>
-      <h3 className="text-xl p-6 pb-0">Why do Groth16 verifiers always mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
+      <h3 className="text-xl p-6 pb-0">Why do Groth16 verifiers mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
       <p className="p-6">
         These values correspond to the entropy used during compilation. This process does not attempt to recreate these settings.
+        <br/><br/>
+
+        To avoid this problem and ensure that proofs can be generated on the circuit's page, deploy your circuit using the Circuitscan deployer.
       </p>
     </Card>
   </div>);
