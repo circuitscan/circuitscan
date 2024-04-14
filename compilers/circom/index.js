@@ -45,12 +45,23 @@ async function prove(event) {
     ]
   );
 
-  const result = await fullProve(
-    event.payload.input,
-    event.payload.protocol,
-    query.rows[0].wasm,
-    query.rows[0].pkey,
-  );
+  let result;
+  try {
+    result = await fullProve(
+      event.payload.input,
+      event.payload.protocol,
+      query.rows[0].wasm,
+      query.rows[0].pkey,
+    );
+  } catch(error) {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        errorType: 'error',
+        errorMessage: error.message
+      }),
+    };
+  }
 
   return {
     statusCode: 200,
