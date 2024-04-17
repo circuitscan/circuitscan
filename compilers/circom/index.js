@@ -1,6 +1,7 @@
 import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import pg from 'pg';
 import {Circomkit} from 'circomkit';
 import {keccak256, toHex} from 'viem';
@@ -12,7 +13,9 @@ import {fullProve} from './prove.js';
 const BUILD_NAME = 'verify_circuit';
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const TABLE_PROVERS = 'circom_provers';
+const Bucket = process.env.BLOB_BUCKET;
 
+const s3 = new S3Client({ region: process.env.BLOB_BUCKET_REGION });
 const pool = new pg.Pool({
   connectionString: process.env.PG_CONNECTION,
 });
@@ -135,6 +138,18 @@ async function build(event) {
       readFileSync(join(dirBuild, BUILD_NAME, BUILD_NAME + '_js', BUILD_NAME + '.wasm')),
       readFileSync(join(dirBuild, BUILD_NAME, event.payload.protocol + '_pkey.zkey')),
     ]);
+
+  // Circom sources to S3 in order to use Cloudflare caching
+  for(let filename of Object.keys(event.payload.files)) {
+    const fileConts = event.payload.files[filename].code;
+    const fileHash = keccak256(toHex(fileConts));
+
+    await s3.send(new PutObjectCommand({
+      Bucket,
+      Key: fileHash,
+      Body: fileConts,
+    }));
+  }
 
   const compiled = await compileSolidityContract(contractPath);
   return {

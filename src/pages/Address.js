@@ -24,6 +24,7 @@ import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import CircuitForm from '../components/CircuitForm.js';
 import Card from '../components/Card.js';
+import DependencyCard from '../components/DependencyCard.js'
 import {clsIconA, clsButton, clsInput} from '../components/Layout.js';
 import {
   findChain,
@@ -31,12 +32,13 @@ import {
   verifierABI,
   extractCircomTemplate,
   inputTemplate,
+  fetchBlob,
 } from '../utils.js';
 
-// TODO form for submitting a proof to be verified
 export function Address() {
   const [proofInputs, setProofInputs] = useState('{}');
   const [proofOutput, setProofOutput] = useState();
+  const [circomSource, setCircomSource] = useState();
   const navigate = useNavigate();
   const darkMode = useDarkMode();
   const {address, chain: chainParam} = useParams();
@@ -45,6 +47,7 @@ export function Address() {
     isValid ? import.meta.env.VITE_API_URL : null,
     {
       payload: {
+        // TODO this needs to not be a post for caching
         action: 'get-status',
         address,
         chainId: chainParam,
@@ -67,7 +70,6 @@ export function Address() {
 
   // TODO how to stop flikering using loadMore flag
   let parsedData, deployedChain, loadMore = true;
-  let templateDetails;
   if(data) {
     if('body' in data && typeof data.body === 'string') {
       parsedData = JSON.parse(data.body);
@@ -84,23 +86,26 @@ export function Address() {
     }
     if(chainParam) {
       deployedChain = findChain(chainParam);
-      if(parsedData && parsedData.verified) {
-        // TODO: memoize
-        templateDetails = extractCircomTemplate(
-          parsedData.verified.payload.files[parsedData.verified.payload.file].code,
-          parsedData.verified.payload.tpl,
-        );
-      }
       loadMore = false;
     }
   }
   useEffect(() => {
-    if(parsedData && parsedData.verified && chainParam) {
-      setProofInputs(JSON.stringify(inputTemplate(
-        templateDetails,
-        parsedData.verified.payload.params,
-      ), null, 2));
+    async function generateDefaultProofInput() {
+      if(!data || !parsedData) return;
+      const source = await fetchBlob(parsedData.verified.payload.files[parsedData.verified.payload.file]);
+      setCircomSource(source);
+      if(parsedData && parsedData.verified && chainParam) {
+        const templateDetails = extractCircomTemplate(
+          source,
+          parsedData.verified.payload.tpl,
+        );
+        setProofInputs(JSON.stringify(inputTemplate(
+          templateDetails,
+          parsedData.verified.payload.params,
+        ), null, 2));
+      }
     }
+    generateDefaultProofInput();
   }, [ data ]);
 
   async function prove() {
@@ -251,16 +256,16 @@ export function Address() {
           })}
         </>}
       </div>
-      {loading || loadMore ? <>
-        <Card>
-          <div className="flex flex-col w-full content-center items-center">
-            <p className="p-6">Loading contract data...</p>
-          </div>
-        </Card>
-      </> : error ? <>
+      {error ? <>
         <Card>
           <div className="flex flex-col w-full content-center items-center">
             <p className="p-6">Error loading contract data!</p>
+          </div>
+        </Card>
+      </> : loading || loadMore ? <>
+        <Card>
+          <div className="flex flex-col w-full content-center items-center">
+            <p className="p-6">Loading contract data...</p>
           </div>
         </Card>
       </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
@@ -312,36 +317,33 @@ export function Address() {
                 <textarea
                   className={`${clsInput} min-h-32`}
                   value={JSON.stringify(JSON.parse(proofOutput.calldata), null, 2)}
-                  readonly
+                  readOnly
                 />
                 <p className="text-l font-bold">Public Signals</p>
                 <textarea
                   className={`${clsInput} min-h-32`}
                   value={JSON.stringify(proofOutput.proof.publicSignals, null, 2)}
-                  readonly
+                  readOnly
                 />
               </>}
             </Card>
           </div>
 
-          <Card>
+          {circomSource && <Card>
             <h3 className="text-xl font-bold">{parsedData.verified.payload.file}</h3>
             <CodeBlock
-              code={parsedData.verified.payload.files[parsedData.verified.payload.file].code}
+              code={circomSource}
               language="circom"
             />
-          </Card>
+          </Card>}
 
           {Object.keys(parsedData.verified.payload.files)
-            .filter(x => x !== parsedData.verified.payload.file).map((file, index) => <>
-              <Card key={index}>
-                <h3 className="text-xl font-bold">{file}</h3>
-                <CodeBlock
-                  code={parsedData.verified.payload.files[file].code}
-                  language="circom"
-                />
-              </Card>
-          </>)}
+            .filter(x => x !== parsedData.verified.payload.file).map((file, index) =>
+              <DependencyCard
+                {...{file}}
+                hash={parsedData.verified.payload.files[file]}
+                key={index}
+              />)}
 
           {parsedData.verified.ogSource !== parsedData.verified.contract && <>
             <Card>

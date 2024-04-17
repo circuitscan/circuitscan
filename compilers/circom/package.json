@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.556.0",
     "circomkit": "^0.0.24",
     "pg": "^8.11.5",
     "viem": "2.x"

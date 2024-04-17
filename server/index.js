@@ -372,8 +372,20 @@ async function verify(event) {
     protocol: event.payload.protocol,
   })));
 
+  // Circom sources are stored in S3 during build,
+  // store only file hashes in postgres
+  const fileHashes = {};
+  for(let filename of Object.keys(event.payload.files)) {
+    const fileConts = event.payload.files[filename].code;
+    const fileHash = keccak256(toHex(fileConts));
+    fileHashes[filename] = fileHash;
+  }
+
   const body = {
-    payload: event.payload,
+    payload: {
+      ...event.payload,
+      files: fileHashes,
+    },
     contract,
     ogSource: ogObj.chains[event.payload.chainId],
     chainId: event.payload.chainId,
