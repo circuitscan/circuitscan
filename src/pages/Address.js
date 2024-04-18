@@ -286,6 +286,8 @@ export function Address() {
           <div className="flex flex-col sm:flex-row">
             <Card>
               <dl>
+                <dt className="text-l font-bold">Circom Version</dt>
+                <dd className="pl-6">{parsedData.verified.payload.circomVersion}</dd>
                 <dt className="text-l font-bold">Protocol</dt>
                 <dd className="pl-6">{parsedData.verified.payload.protocol}</dd>
                 <dt className="text-l font-bold">Template</dt>

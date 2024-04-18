@@ -298,6 +298,13 @@ async function verify(event) {
   if(ogSource.statusCode !== 200) return ogSource;
   const ogObj = JSON.parse(ogSource.body);
 
+  // Default to latest
+  const circomVersions = process.env.VITE_CIRCOM_VERSIONS.split(',');
+  let circomPath = 'circom-' +  circomVersions[0];
+  if('circomVersion' in event.payload && circomVersions.indexOf(event.payload.circomVersion) > -1) {
+    circomPath = 'circom-' + event.payload.circomVersion;
+  }
+
   const signer = await recoverMessageAddress({
     signature: event.payload.signature,
     message: JSON.stringify({
@@ -307,6 +314,7 @@ async function verify(event) {
       params: event.payload.params,
       tpl: event.payload.tpl,
       protocol: event.payload.protocol,
+      circomPath,
       solidityCode: event.payload.contract,
     }),
   });
@@ -370,6 +378,7 @@ async function verify(event) {
     params: event.payload.params,
     tpl: event.payload.tpl,
     protocol: event.payload.protocol,
+    circomPath,
   })));
 
   // Circom sources are stored in S3 during build,

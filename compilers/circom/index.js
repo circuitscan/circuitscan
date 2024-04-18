@@ -1,9 +1,15 @@
-import {readFileSync, writeFileSync, mkdtempSync, rmdirSync} from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdtempSync,
+  rmdirSync,
+  existsSync,
+} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import pg from 'pg';
-import {Circomkit} from 'circomkit';
+import {Circomkit} from 'circomkit-numtel'; // Using customized version
 import {keccak256, toHex} from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
@@ -85,11 +91,21 @@ async function build(event) {
     }
     writeFileSync(join(dirCircuits, file), code);
   }
+  // Default to latest
+  const circomVersions = process.env.VITE_CIRCOM_VERSIONS.split(',');
+  let circomPath = 'circom-' +  circomVersions[0];
+  if('circomVersion' in event.payload) {
+    if(circomVersions.indexOf(event.payload.circomVersion) === -1)
+      throw new Error('invalid_release');
+
+    circomPath = 'circom-' + event.payload.circomVersion;
+  }
 
   const config = {
     dirCircuits,
     dirPtau,
     dirBuild,
+    circomPath,
     protocol: event.payload.protocol,
   };
 
@@ -127,6 +143,7 @@ async function build(event) {
     params: event.payload.params,
     tpl: event.payload.tpl,
     protocol: event.payload.protocol,
+    circomPath,
   })));
 
   await pool.query(`
@@ -165,6 +182,7 @@ async function build(event) {
         params: event.payload.params,
         tpl: event.payload.tpl,
         protocol: event.payload.protocol,
+        circomPath,
         solidityCode,
       })}),
     }),

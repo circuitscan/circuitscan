@@ -29,6 +29,8 @@ export default function CircuitForm({
   const [params, setParams] = useState('');
   const [pubs, setPubs] = useState('');
   const [protocol, setProtocol] = useState('groth16');
+  const circomVersions = import.meta.env.VITE_CIRCOM_VERSIONS.split(',');
+  const [circomVersion, setCircomVersion] = useState(circomVersions[0]);
   useEffect(() => {
     if(bundleState[0]) {
       // Dependency tree has been filled, continue to form
@@ -57,6 +59,7 @@ export default function CircuitForm({
       pubs,
       tpl,
       protocol,
+      circomVersion,
     });
   }
 
@@ -81,6 +84,20 @@ export default function CircuitForm({
   return (<form onSubmit={handleSubmit}>
     <UploadCode {...{dataState, bundleState, circomlib}} />
     {bundleState[0] && <>
+      <div>
+        <label className="m-4 flex">
+          <span className="p-3">Circom Version:</span>
+          <select
+            value={circomVersion}
+            onChange={(e) => setCircomVersion(e.target.value)}
+            className={clsInput}
+          >
+            {circomVersions.map((version, index) =>
+              <option key={index}>{version}</option>
+            )}
+          </select>
+        </label>
+      </div>
       <div>
         <label className="m-4 flex">
           <span className="p-3">Protocol:</span>
