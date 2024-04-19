@@ -269,12 +269,14 @@ export function Address() {
           </div>
         </Card>
       </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
-        <Card>
-          <CodeBlock
-            code={parsedData.source.chains[chainParam]}
-            language="solidity"
-          />
-        </Card>
+        {Object.keys(parsedData.source.chains[chainParam]).map((file) =>
+          <Card key={file}>
+            <h3 className="text-l font-bold">{file}</h3>
+            <CodeBlock
+              code={parsedData.source.chains[chainParam][file]}
+              language="solidity"
+            />
+          </Card>)}
       </> : data && 'errorType' in parsedData ? <>
         <Card>
           <p className="text-rose-600 dark:text-rose-300">{parsedData.errorType}</p>

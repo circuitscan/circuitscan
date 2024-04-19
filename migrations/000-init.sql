@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS solidity_sources (
     id SERIAL PRIMARY KEY,
     chainid BIGINT NOT NULL,
     address BYTEA NOT NULL,
-    source_code TEXT
+    source_code JSONB
 );
 
 CREATE INDEX idx_solidity_sources_chainid_address ON solidity_sources(chainid, address);

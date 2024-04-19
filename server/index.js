@@ -10,6 +10,7 @@ import {
   findContractName,
 } from './etherscan.js';
 
+const SOLC_VERSION = "v0.8.25+commit.b61c2a91";
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
@@ -134,7 +135,7 @@ async function verifyContract(event) {
     // Contract name
     "contracts/Verified.sol:" + findContractName(event.payload.sourceCode),
     // Compiler version
-    "v0.8.25+commit.b61c2a91",
+    SOLC_VERSION,
     // Encoded constructor arguments
     ""
   );
@@ -219,8 +220,11 @@ async function contractSource(event) {
     if(!data.result[0].SourceCode) continue;
 
     const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
-    const source = inner.sources[Object.keys(inner.sources)[0]].content;
-    foundChains[String(chains[i].chain.id)] = source;
+    const sources = Object.keys(inner.sources).reduce((out, file) => {
+      out[file] = inner.sources[file].content;
+      return out;
+    }, {});
+    foundChains[String(chains[i].chain.id)] = sources;
     await pool.query(`
       INSERT INTO ${TABLE_SOURCES} (chainid, address, source_code)
         VALUES ($1, $2, $3)
@@ -230,7 +234,7 @@ async function contractSource(event) {
       [
         chains[i].chain.id,
         Buffer.from(event.payload.address.slice(2), 'hex'),
-        source,
+        sources,
       ]);
   }
 
@@ -322,7 +326,8 @@ async function verify(event) {
     throw new Error('invalid_signature');
 
   const contract = event.payload.contract;
-  const diff = diffTrimmedLines(ogObj.chains[event.payload.chainId], contract);
+  const firstFile = Object.keys(ogObj.chains[event.payload.chainId])[0];
+  const diff = diffTrimmedLines(ogObj.chains[event.payload.chainId][firstFile], contract);
 
   let acceptableDiff = true;
   let lastRemoved = null;
@@ -396,7 +401,7 @@ async function verify(event) {
       files: fileHashes,
     },
     contract,
-    ogSource: ogObj.chains[event.payload.chainId],
+    ogSource: ogObj.chains[event.payload.chainId][firstFile],
     chainId: event.payload.chainId,
     diff,
     acceptableDiff,
