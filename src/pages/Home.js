@@ -15,9 +15,13 @@ export function Home() {
       <p className="py-3">
         Like verifying a contract on the block explorer, verify your Circom circuits on the circuit explorer.
         <br /><br />
-        This beta version supports Sepolia and Holesky.
+        Supports all chains with Etherscan (or equivalent):
         <br />
-        Maximum 5000 MB RAM on server for deploy/verify.
+        Mainnet, Optimism, Polygon, Fantom, Arbitrum, Arbitrum Nova, Gnosis, Celo, Base, Sepolia, and Holesky.
+        <br /><br />
+        Maximum 10GB RAM on server for deploy/verify/proof generation.
+        <br />
+        Contact us on Github for larger circuits.
       </p>
       <p className="p-6">
         <Link to="/deploy">

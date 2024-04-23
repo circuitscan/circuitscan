@@ -14,6 +14,15 @@ import { WagmiProvider } from 'wagmi';
 import {
   sepolia,
   holesky,
+  mainnet,
+  optimism,
+  polygon,
+  fantom,
+  arbitrum,
+  arbitrumNova,
+  gnosis,
+  celo,
+  base,
 } from 'wagmi/chains';
 import {
   QueryClientProvider,
@@ -29,7 +38,19 @@ import './App.css';
 const config = getDefaultConfig({
   appName: 'Circuitscan',
   projectId: '3ab784972e6540d0095810e72372cfd1',
-  chains: [sepolia, holesky],
+  chains: [
+    sepolia,
+    holesky,
+    mainnet,
+    optimism,
+    polygon,
+    fantom,
+    arbitrum,
+    arbitrumNova,
+    gnosis,
+    celo,
+    base,
+  ],
 });
 const queryClient = new QueryClient();
 
