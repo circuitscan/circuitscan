@@ -40,6 +40,18 @@ export function Layout() {
 
   return (<>
       <Toaster />
+      <a
+        href="https://explorer.gitcoin.co/#/round/42161/26/22"
+        target="_blank"
+        rel="noopener"
+        className={`
+          bg-lightaccent dark:bg-darkaccent
+          text-lightbg dark:text-darkbg
+          text-center font-bold
+          block p-2
+        `}>
+        Please support Circuitscan on GG20 before May 7th!
+      </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
         border-b border-neutral-300 dark:border-neutral-600
