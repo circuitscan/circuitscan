@@ -149,15 +149,15 @@ export function Address() {
       data: funcData,
       to: address,
     });
+    setProofOutput(result);
     const success = parseInt(callResult.data) > 0;
     if(!success) {
       toast.dismiss();
-      toast.error('Proof inputs failed to generate!');
+      toast.error('Proof inputs failed to verify');
       return;
     }
-    setProofOutput(result);
     toast.dismiss();
-    toast.success('Proof generated successfully!');
+    toast.success('Proof verified successfully!');
 
   }
 
