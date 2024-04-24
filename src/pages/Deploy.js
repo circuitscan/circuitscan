@@ -24,6 +24,7 @@ export function Deploy() {
   const [ txHash, setTxHash ] = useState();
   const [ compiled, setCompiled ] = useState();
   const [ formEvent, setFormEvent ] = useState();
+  const [ step, setStep ] = useState(0);
   const { isError, isPending, isSuccess, data } = useWaitForTransactionReceipt({ hash: txHash });
   const {
     post,
@@ -40,6 +41,7 @@ export function Deploy() {
 
   async function handleSubmit(event) {
     setFormEvent(event);
+    setStep(1);
     toast.loading('Compiling circuit...');
     const result = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
       ...event,
@@ -54,6 +56,7 @@ export function Deploy() {
     setCompiled(body);
 
     toast.dismiss();
+    setStep(2);
     toast.loading('Deploying circuit...');
 
     let hash;
@@ -64,6 +67,7 @@ export function Deploy() {
       });
     } catch (error) {
       toast.dismiss();
+      setStep(-1);
       toast.error('Deployment failed.');
     }
 
@@ -73,6 +77,7 @@ export function Deploy() {
 
   async function verifyContract(retries) {
       toast.dismiss();
+      setStep(2);
       toast.loading('Verifying contract...');
       let json1;
       try {
@@ -95,6 +100,7 @@ export function Deploy() {
         if((retries || 0) < 5) {
           toast.loading('Error verifying contract, retrying...');
         } else {
+          setStep(-1);
           toast.error(error.message);
         }
         console.error(error);
@@ -143,6 +149,7 @@ export function Deploy() {
         if(alreadyVerified || body2.success) {
           clearInterval(finishedInterval);
           toast.dismiss();
+          setStep(3);
           toast.loading('Verifying circuit...');
 
           const result = await post(import.meta.env.VITE_API_URL, { payload: {
@@ -155,6 +162,7 @@ export function Deploy() {
           }});
           if('errorType' in result) {
             toast.dismiss();
+            setStep(-1);
             toast.error(result.errorMessage);
             return;
           }
@@ -184,6 +192,20 @@ export function Deploy() {
     <Helmet>
       <title>Circuitscan - Deploy Circuit</title>
     </Helmet>
+    {step !== 0 && <Card>
+      <div className="flex flex-col w-full content-center items-center">
+        <meter
+          min="0"
+          max="5"
+          low="0"
+          high="3"
+          optimum="3"
+          value={step === -1 ? 5 : step}
+          className={`
+            w-full
+          `} />
+      </div>
+    </Card>}
     {isError ?
       <Card>
         <div className="flex flex-col w-full content-center items-center">
