@@ -10,7 +10,7 @@
 - [ ] add support for noir verifiers too
 - [ ] ddos protection! / account system
 - [ ] api for programmatic verification / command in circomkit fo ci
-- [ ] allow for contract name changes?
+- [ ] what differences are allowable? / testing on circuit verifiers in the wild
 - [x] form for submitting a proof to be verified
 - [x] auto-include circomlib files in selector
 - [ ] fork/create new circuit
@@ -35,9 +35,10 @@ $ yarn dev
 ### Local Server
 
 ```
-# Configure Etherscan, Postgres, Signer
+# Configure Etherscan, Postgres, signing account,
+# AWS access keys, blob settings for solidity source cache
 # and change VITE_API_URL to `/api`
-# and change VITE_API_URL_CIRCOM to `/build-circom`
+# and change VITE_API_URL_CIRCOM to `/build-circom` if building locally
 # to use the local running docker container through vite proxy
 $ vim .env
 
@@ -49,6 +50,10 @@ $ yarn build:server
 
 # Run server lambda in docker container
 $ yarn dev:server
+
+# If building locally, run the Circom compiler lambda container too:
+$ yarn build:lambda-circom
+$ yarn dev:lambda-circom
 ```
 
 ## License
