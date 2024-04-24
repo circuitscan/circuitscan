@@ -96,19 +96,30 @@ export async function handler(event) {
     // Running on AWS
     event = JSON.parse(event.body);
   }
-  switch(event.payload.action) {
-    case 'newest':
-      return getNewest(event);
-    case 'get-status':
-      return getStatus(event);
-    case 'verify':
-      return verify(event);
-    case 'verify-contract':
-      return verifyContract(event);
-    case 'check-verify-contract':
-      return checkVerification(event);
-    default:
-      throw new Error('invalid_command');
+  try {
+    switch(event.payload.action) {
+      case 'newest':
+        return await getNewest(event);
+      case 'get-status':
+        return await getStatus(event);
+      case 'verify':
+        return await verify(event);
+      case 'verify-contract':
+        return await verifyContract(event);
+      case 'check-verify-contract':
+        return await checkVerification(event);
+      default:
+        throw new Error('invalid_command');
+    }
+  } catch(error) {
+    console.error(error);
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        errorType: 'error',
+        errorMessage: error.message
+      }),
+    };
   }
 }
 
@@ -276,11 +287,23 @@ async function contractSource(event) {
     const data = reqs[i];
     if(!data.result[0].SourceCode) continue;
 
-    const inner = JSON.parse(data.result[0].SourceCode.slice(1, -1));
-    const sources = Object.keys(inner.sources).reduce((out, file) => {
-      out[file] = inner.sources[file].content;
-      return out;
-    }, {});
+    let sources;
+    let code = data.result[0].SourceCode;
+    // Some Etherscans have double curlies, some don't?
+    if(code.indexOf('{{') === 0) {
+      code = code.slice(1, -1);
+    }
+    if(code.indexOf('{') === 0) {
+      // Etherscan provided an object with multiple solidity sources
+      const inner = JSON.parse(code);
+      sources = Object.keys(inner.sources).reduce((out, file) => {
+        out[file] = inner.sources[file].content;
+        return out;
+      }, {});
+    } else {
+      // Some Etherscans send just a string if it's one file
+      sources = { 'verifier.sol': code };
+    }
     foundChains[String(chains[i].chain.id)] = sources;
     await pool.query(`
       INSERT INTO ${TABLE_SOURCES} (chainid, address, source_code)

@@ -269,14 +269,20 @@ export function Address() {
           </div>
         </Card>
       </> : data && deployedChain && !parsedData.verified && parsedData.source ? <>
-        {Object.keys(parsedData.source.chains[chainParam]).map((file) =>
-          <Card key={file}>
-            <h3 className="text-l font-bold">{file}</h3>
-            <CodeBlock
-              code={parsedData.source.chains[chainParam][file]}
-              language="solidity"
-            />
-          </Card>)}
+        {chainParam in parsedData.source.chains
+            && parsedData.source.chains[chainParam] ? <>
+          {Object.keys(parsedData.source.chains[chainParam]).map((file) =>
+            <Card key={file}>
+              <h3 className="text-l font-bold">{file}</h3>
+              <CodeBlock
+                code={parsedData.source.chains[chainParam][file]}
+                language="solidity"
+              />
+            </Card>)}
+         </> : <Card>
+          <p className="text-rose-600 dark:text-rose-300">No verified contract on this chain.</p>
+          <p>Please check if the contract is verified on Etherscan.</p>
+         </Card>}
       </> : data && 'errorType' in parsedData ? <>
         <Card>
           <p className="text-rose-600 dark:text-rose-300">{parsedData.errorType}</p>
@@ -373,6 +379,7 @@ export function Address() {
        && parsedData.source
        && 'chains' in parsedData.source
        && Object.keys(parsedData.source.chains).length > 0
+       && parsedData.source.chains[chainParam]
        && (!parsedData.verified || !parsedData.verified.acceptableDiff)
        &&
         <Card>
