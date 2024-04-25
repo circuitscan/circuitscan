@@ -112,11 +112,13 @@ export function Deploy() {
       }
       // Local dev version returns like this:
       if('errorType' in json1) {
-        toast.dismiss();
-        toast.error(json1.errorMessage);
         console.error(json1);
+        toast.dismiss();
         if(json1.errorMessage.indexOf('waiting for a minute') > -1) {
+          toast.error('Waiting for block explorer to index transaction...');
           setTimeout(verifyContract, 5000);
+        } else {
+          toast.error(json1.errorMessage);
         }
         return;
       }
