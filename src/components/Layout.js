@@ -50,7 +50,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Please support Circuitscan on GG20 before May 7th!
+        Thanks for supporting Circuitscan on GG20!
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900

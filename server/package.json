@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@nomicfoundation/hardhat-verify": "^2.0.5",
     "diff": "5.2.0",
     "pg": "^8.11.5",
     "viem": "2.x"
