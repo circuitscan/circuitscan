@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS pkg_association (
     chainid BIGINT NOT NULL,
     address BYTEA NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    pkg_name BYTEA,
+    pkg_name CHARACTER VARYING,
     info JSONB
 );
 

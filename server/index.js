@@ -1,5 +1,10 @@
+import pg from 'pg';
 import {verifyCircom} from './verifyCircom.js';
 import {TABLE_PKG_ASSOC} from './constants.js';
+
+const pool = new pg.Pool({
+  connectionString: process.env.PG_CONNECTION,
+});
 
 export async function handler(event) {
   if('body' in event) {
@@ -39,13 +44,8 @@ async function getNewest(event) {
 
   const query = await pool.query(`
     SELECT
-      chainid,
-      address,
-      created_at,
-      payload->'payload'->'tpl' as tpl,
-      payload->'payload'->'params' as params,
-      payload->'payload'->'protocol' as protocol
-    FROM verified_circuit
+      *
+    FROM ${TABLE_PKG_ASSOC}
     ORDER BY id DESC
     LIMIT ${Math.floor(event.payload.limit)}
     OFFSET ${Math.floor(event.payload.offset)}

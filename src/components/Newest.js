@@ -94,7 +94,7 @@ export default function Newest() {
                     mr-1 grow
                   `}>
                     <span className="font-bold">
-                      {row.tpl}({row.params}) - {row.protocol}
+                      {row.info.circuit.template}{JSON.stringify(row.info.circuit.params)} - {row.info.protocol}
                     </span>
                     <span className="text-sm block">{row.address}</span>
                   </span>
