@@ -79,8 +79,8 @@ Resources:
       PackageType: Image
       Code:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
-      MemorySize: 10240
-      Timeout: 600
+      MemorySize: 256
+      Timeout: 30
       Environment:
         Variables:
           BLOB_URL: !Ref BlobUrl
