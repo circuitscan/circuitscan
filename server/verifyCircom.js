@@ -42,8 +42,11 @@ export async function verifyCircom(event) {
       break;
     }
   }
-  if(!foundMatch)
+  if(!foundMatch) {
+    console.log(verified);
+    console.log(compiled);
     throw new Error('invalid_diff');
+  }
 
   // save pkgName association for chainid/address to pg db
   await pool.query(`

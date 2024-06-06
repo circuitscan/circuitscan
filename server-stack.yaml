@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create a Lambda function from an ECR image with a function URL
+
+Parameters:
+  ECRRepoName:
+    Type: String
+    Description: The name of the ECR repository
+    Default: circuitscan_server
+  ECRImageTag:
+    Type: String
+    Description: The tag of the ECR image
+    Default: latest
+  BlobUrl:
+    Type: String
+    Description: Where compilation artifacts are stored
+    Default: https://blob.circuitscan.org/
+  PGConnection:
+    Type: String
+    Description: For pkg_association table
+    Default: postgresql://user:pw@host/db
+  EtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  OptimismEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  PolygonEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  FantomEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  ArbitrumEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  ArbitrumNovaEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  GnosisEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  CeloEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+  BaseEtherscanApiKey:
+    Type: String
+    Description: For fetching solidity source
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "LambdaExecutionPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ECRRepoName}-lambda-function"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      PackageType: Image
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
+      MemorySize: 10240
+      Timeout: 600
+      Environment:
+        Variables:
+          BLOB_URL: !Ref BlobUrl
+          PG_CONNECTION: !Ref PGConnection
+          ETHERSCAN_API_KEY: !Ref EtherscanApiKey
+          OPTIMISM_ETHERSCAN_API_KEY: !Ref OptimismEtherscanApiKey
+          POLYGON_ETHERSCAN_API_KEY: !Ref PolygonEtherscanApiKey
+          FANTOM_ETHERSCAN_API_KEY: !Ref FantomEtherscanApiKey
+          ARBITRUM_ETHERSCAN_API_KEY: !Ref ArbitrumEtherscanApiKey
+          ARBITRUM_NOVA_ETHERSCAN_API_KEY: !Ref ArbitrumNovaEtherscanApiKey
+          GNOSIS_ETHERSCAN_API_KEY: !Ref GnosisEtherscanApiKey
+          CELO_ETHERSCAN_API_KEY: !Ref CeloEtherscanApiKey
+          BASE_ETHERSCAN_API_KEY: !Ref BaseEtherscanApiKey
+
+  LambdaFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt LambdaFunction.Arn
+
+  LambdaFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunctionUrl"
+      FunctionName: !Ref LambdaFunction
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  LambdaFunctionUrl:
+    Description: The URL of the Lambda function
+    Value: !GetAtt LambdaFunctionUrl.FunctionUrl
+
