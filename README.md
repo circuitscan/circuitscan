@@ -8,17 +8,16 @@
 
 - [x] support more than just latest circom version
 - [ ] add support for noir verifiers too
-- [ ] ddos protection! / account system
-- [ ] api for programmatic verification / command in circomkit fo ci
-- [ ] what differences are allowable? / testing on circuit verifiers in the wild
-- [x] form for submitting a proof to be verified
-- [x] auto-include circomlib files in selector
-- [ ] fork/create new circuit
+- [ ] ddos protection! / account system (sign in with ethereum)
+- [x] [api for programmatic verification](https://github.com/circuitscan/cli) / command in circomkit fo ci
+- [ ] testing on circuit verifiers in the wild
 
 ## Installation
 
+To run the frontend locally:
+
 > [!NOTE]
-> Requires Node.js, Yarn, and Docker (if you want to run server locally)
+> Requires Node.js and Yarn
 
 ```
 $ git clone https://github.com/numtel/circuitscan
@@ -34,11 +33,15 @@ $ yarn dev
 
 ### Local Server
 
+Optionally, you can also develop the server locally.
+
+> [!NOTE]
+> Requires Docker
+
 ```
-# Configure Etherscan, Postgres, signing account,
+# Configure Etherscan, Postgres,
 # AWS access keys, blob settings for solidity source cache
 # and change VITE_API_URL to `/api`
-# and change VITE_API_URL_CIRCOM to `/build-circom` if building locally
 # to use the local running docker container through vite proxy
 $ vim .env
 
@@ -51,9 +54,6 @@ $ yarn build:server
 # Run server lambda in docker container
 $ yarn dev:server
 
-# If building locally, run the Circom compiler lambda container too:
-$ yarn build:lambda-circom
-$ yarn dev:lambda-circom
 ```
 
 ## License

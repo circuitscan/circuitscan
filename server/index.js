@@ -1,5 +1,8 @@
 import pg from 'pg';
+import {isAddress} from 'viem';
+
 import {verifyCircom} from './verifyCircom.js';
+import {findChain} from './chains.js';
 import {TABLE_PKG_ASSOC} from './constants.js';
 
 const pool = new pg.Pool({
@@ -13,6 +16,7 @@ export async function handler(event) {
   }
   try {
     switch(event.payload.action) {
+      // TODO move newest and pkg-assoc to blob s3
       case 'newest':
         return await getNewest(event);
       case 'pkg-assoc':
@@ -62,17 +66,11 @@ async function getPkgAssoc(event) {
     throw new Error('missing_payload');
   if(!isAddress(event.payload.address))
     throw new Error('invalid_address');
-  if(!event.payload.chainId)
-    throw new Error('missing_chainId');
-  const chain = findChain(event.payload.chainId);
-  if(!chain)
-    throw new Error('invalid_chainId');
 
   const query = await pool.query(`
-    SELECT * FROM ${TABLE_PKG_ASSOC} WHERE chainid = $1 AND address = $2
+    SELECT * FROM ${TABLE_PKG_ASSOC} WHERE address = $1
   `,
   [
-    event.payload.chainId,
     Buffer.from(event.payload.address.slice(2), 'hex'),
   ]);
 

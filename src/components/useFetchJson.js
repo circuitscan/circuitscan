@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export default function useFetchJson(url, body) {
+export default function useFetchJson(url, body, options) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +31,10 @@ export default function useFetchJson(url, body) {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        const json = await response.json();
+        let json = await response.json();
+        if(options && typeof options.transform === 'function') {
+          json = options.transform(json);
+        }
         setData(json);
       } catch (err) {
         setError(err.message);

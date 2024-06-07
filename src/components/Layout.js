@@ -41,7 +41,7 @@ export function Layout() {
   return (<>
       <Toaster />
       <a
-        href="https://explorer.gitcoin.co/#/round/42161/26/22"
+        href="https://github.com/circuitscan"
         target="_blank"
         rel="noopener"
         className={`
@@ -50,7 +50,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Thanks for supporting Circuitscan on GG20!
+        Under Construction
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900

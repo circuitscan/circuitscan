@@ -19,34 +19,17 @@ export function Home() {
         <br />
         Mainnet, Optimism, Polygon, Fantom, Arbitrum, Arbitrum Nova, Gnosis, Celo, Base, Sepolia, and Holesky.
         <br /><br />
-        Maximum 10GB RAM on server for deploy/verify/proof generation.
-        <br />
-        Contact us on Github for larger circuits.
+        Use the CLI to verify or deploy your circuit verifiers.
       </p>
       <p className="p-6">
-        <Link to="/deploy">
-          <button className={clsButton}>
-            <PaperAirplaneIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
-            Deploy Circuit
-          </button>
-        </Link>
-        <a href="https://github.com/numtel/circuitscan" target="_blank" rel="noopener">
+        <a href="https://github.com/circuitscan/cli" target="_blank" rel="noopener">
           <button className={clsButton}>
             <CodeBracketSquareIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
-            View Github Repo
+            Circuitscan CLI on Github
           </button>
         </a>
       </p>
     </Card>
     <Newest />
-    <Card>
-      <h3 className="text-xl p-6 pb-0">Why do Groth16 verifiers mismatch <code>delta&#123;x|y&#125;&#123;1|2&#125;</code> values?</h3>
-      <p className="p-6">
-        These values correspond to the entropy used during compilation. This process does not attempt to recreate these settings.
-        <br/><br/>
-
-        To avoid this problem and ensure that proofs can be generated on the circuit's page, deploy your circuit using the Circuitscan deployer.
-      </p>
-    </Card>
   </div>);
 }
