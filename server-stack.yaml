@@ -10,14 +10,18 @@ Parameters:
     Type: String
     Description: The tag of the ECR image
     Default: latest
+  AssocBucket:
+    Type: String
+    Description: S3 Bucket in which to store package/address associations
+    Default: blob.circuitscan.org
+  MaxNewest:
+    Type: String
+    Description: Maximum number of verifiers to keep in latest.json
+    Default: 100
   BlobUrl:
     Type: String
     Description: Where compilation artifacts are stored
     Default: https://blob.circuitscan.org/
-  PGConnection:
-    Type: String
-    Description: For pkg_association table
-    Default: postgresql://user:pw@host/db
   EtherscanApiKey:
     Type: String
     Description: For fetching solidity source
@@ -70,6 +74,12 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "s3:*"
+                Resource:
+                  - !Sub arn:aws:s3:::${AssocBucket}/*
+                  - !Sub arn:aws:s3:::${AssocBucket}
 
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -81,10 +91,12 @@ Resources:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
       MemorySize: 256
       Timeout: 30
+      ReservedConcurrentExecutions: 1 # For association, newest feed appends
       Environment:
         Variables:
+          ASSOC_BUCKET: !Ref AssocBucket
+          MAX_NEWEST: !Ref MaxNewest
           BLOB_URL: !Ref BlobUrl
-          PG_CONNECTION: !Ref PGConnection
           ETHERSCAN_API_KEY: !Ref EtherscanApiKey
           OPTIMISM_ETHERSCAN_API_KEY: !Ref OptimismEtherscanApiKey
           POLYGON_ETHERSCAN_API_KEY: !Ref PolygonEtherscanApiKey

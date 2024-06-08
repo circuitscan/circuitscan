@@ -1,16 +1,11 @@
-import pg from 'pg';
 import {diffTrimmedLines} from 'diff';
 
 import {findChain} from './chains.js';
-import {TABLE_PKG_ASSOC} from './constants.js';
+import {transformS3Json} from './utils.js';
 
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
-
-const pool = new pg.Pool({
-  connectionString: process.env.PG_CONNECTION,
-});
 
 export async function verifyCircom(event) {
   if(!event.payload.chainId)
@@ -48,17 +43,31 @@ export async function verifyCircom(event) {
     throw new Error('invalid_diff');
   }
 
-  // save pkgName association for chainid/address to pg db
-  await pool.query(`
-    INSERT INTO ${TABLE_PKG_ASSOC}
-      (chainid, address, pkg_name, info)
-      VALUES ($1, $2, $3, $4)`,
-    [
-      chain.chain.id,
-      Buffer.from(event.payload.contract.slice(2), 'hex'),
-      event.payload.pkgName,
-      await pkgInfoJson(event.payload.pkgName),
-    ]);
+  // save pkgName association in s3 blob/assoc/<address>.json {[chainid]: "<pkgname>"}
+  await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${event.payload.contract}.json`, data => {
+    if(chain.chain.id in data)
+      throw new Error('already_verified');
+    data[chain.chain.id] = event.payload.pkgName;
+    return data;
+  });
+
+  // maintain list of newest n verifiers
+  await transformS3Json(process.env.ASSOC_BUCKET, `latest.json`, data => {
+    if(!('list' in data)) {
+      data.list = [];
+    }
+    data.list.push({
+      chain: chain.chain.id,
+      address: event.payload.contract,
+      pkgName: event.payload.pkgName,
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+
+    if(data.list.length >= parseInt(process.env.MAX_NEWEST, 10)) {
+      data.list.shift();
+    }
+    return data;
+  });
 
   return {
     statusCode: 200,

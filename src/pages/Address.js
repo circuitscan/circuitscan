@@ -18,7 +18,6 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-import useFetchJson from '../components/useFetchJson.js';
 import useDarkMode from '../components/useDarkMode.js';
 import CodeBlock from '../components/CodeBlock.js';
 import Card from '../components/Card.js';
@@ -31,6 +30,7 @@ import {
   extractCircomTemplate,
   inputTemplate,
   fetchBlob,
+  fetchInfo,
 } from '../utils.js';
 
 export function Address() {
@@ -41,34 +41,32 @@ export function Address() {
   const darkMode = useDarkMode();
   const {address, chain: chainParam} = useParams();
   const isValid = isAddress(address);
-  const {data, loading, error, setData} = useFetchJson(
-    isValid ? import.meta.env.VITE_API_URL : null,
-    {
-      payload: {
-        // TODO this needs to not be a post for caching
-        action: 'pkg-assoc',
-        address,
-      },
-    },
-    {
-      transform: response => {
-        let parsedData;
-        if('body' in response && typeof response.body === 'string') {
-          parsedData = JSON.parse(response.body);
-        } else {
-          // Different format for function URL on AWS
-          parsedData = response;
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAsyncData = async () => {
+      try {
+        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${address}.json`);
+        const data = await result.json();
+        for(let chain of Object.keys(data)) {
+          data[chain] = {
+            pkg_name: data[chain],
+            info: await fetchInfo(data[chain]),
+          };
         }
-        const byChain = {};
-        for(let record of parsedData) {
-          if(!(record.chainid in byChain)) {
-            byChain[record.chainid] = record;
-          }
-        }
-        return byChain;
+        setData(data);
+      } catch (err) {
+        console.error(err);
+        setError(err);
+      } finally {
+        setLoading(false);
       }
-    }
-  );
+    };
+
+    isValid && loadAsyncData();
+  }, []);
   const isAddressOnAnyChain = data && Object.keys(data).length > 0;
   let deployedChain;
   let isAddressOnThisChain = false;

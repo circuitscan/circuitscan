@@ -1,50 +1,34 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
-import useFetchJson from './useFetchJson.js';
 import Card from './Card.js';
 import {clsIconA, clsButton} from './Layout.js';
-import {findChain} from '../utils.js';
+import {findChain, fetchInfo} from '../utils.js';
 
 const PERPAGE = 5;
 
 export default function Newest() {
   const [page, setPage] = useState(0);
-  const [showLoadMore, setShowLoadMore] = useState(true);
-  const {data, loading, error, setData} = useFetchJson(
-    import.meta.env.VITE_API_URL,
-    {
-      payload: {
-        action: 'newest',
-        offset: 0,
-        limit: PERPAGE,
-      },
-    },
-  );
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  async function loadNextPage() {
-    toast.dismiss();
-    toast.loading('Loading more...');
-    setPage(page + 1);
-    const response = await fetch(import.meta.env.VITE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        payload: {
-          action: 'newest',
-          offset: (page + 1) * PERPAGE,
-          limit: PERPAGE,
-        },
-      }),
-    });
-    const newPage = await response.json();
-    if(newPage.length < PERPAGE) setShowLoadMore(false);
-    setData(data => [...data, ...newPage]);
-    toast.dismiss();
-  }
+  useEffect(() => {
+    const loadAsyncData = async () => {
+      try {
+        const result = await fetch(import.meta.env.VITE_LATEST_URL);
+        const data = await result.json();
+        setList(data.list.reverse());
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAsyncData();
+  }, []);
 
   return (<>
     {loading ? <>
@@ -59,20 +43,20 @@ export default function Newest() {
           <p className="p-6">Error loading newest submissions!</p>
         </div>
       </Card>
-    </> : data && data.length === 0 ? <>
+    </> : list && list.length === 0 ? <>
       <Card>
         <div className="flex flex-col w-full content-center items-center">
           <p className="p-6">No verifiers verified yet!</p>
         </div>
       </Card>
-    </> : data ? <>
+    </> : list ? <>
       <Card>
           <h3 className={`
             text-xl pt-6 pb-3
             border-b border-neutral-300 dark:border-neutral-600
           `}>Latest Verified Circuit Verifiers</h3>
           <ul className="mb-6">
-            {data.map((row, index) => (
+            {list.map((row, index) => (
               <li key={index} className={`
               `}>
                 <Link
@@ -81,34 +65,65 @@ export default function Newest() {
                     border-b border-neutral-300 dark:border-neutral-600
                     ${clsIconA}
                   `}
-                  to={`/chain/${row.chainid}/address/${row.address}`}
+                  to={`/chain/${row.chain}/address/${row.address}`}
                 >
                   <span className={`
                     inline-block pl-3 pr-2 py-1 mr-3
                     border rounded-full bg-neutral-200 dark:bg-neutral-900
                     border-neutral-400 dark:border-neutral-600
                     text-sm
-                  `}>{findChain(row.chainid).name}</span>
+                  `}>{findChain(row.chain).name}</span>
                   <span className={`
                     text-ellipsis inline-block overflow-hidden
                     mr-1 grow
                   `}>
                     <span className="font-bold">
-                      {row.info.circuit.template}({row.info.circuit.params && row.info.circuit.params.join(', ')}) - {row.info.protocol}
+                      <VerifierDisplay pkgName={row.pkgName} />
                     </span>
                     <span className="text-sm block">{row.address}</span>
                   </span>
                   <span className={`
-                  `}>{(new Date(row.created_at)).toLocaleString()}</span>
+                  `}>{(new Date(row.createdAt * 1000)).toLocaleString()}</span>
                 </Link>
               </li>
             ))}
           </ul>
-          {data.length % PERPAGE === 0 && showLoadMore &&
-            <button onClick={loadNextPage} className={clsButton}>
+          {PERPAGE * page >= list.length &&
+            <button onClick={() => setPage(page + 1)} className={clsButton}>
               Load More...
             </button>}
       </Card>
     </> : null}
+  </>);
+}
+
+function VerifierDisplay({ pkgName }) {
+  const [info, setInfo] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAsyncData = async () => {
+      try {
+        const result = await fetchInfo(pkgName);
+        setInfo(result);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAsyncData();
+  }, []);
+
+  return (<>
+    {loading ? <>
+      Loading...
+    </> : info ? <>
+      {info.circuit.template}({info.circuit.params && info.circuit.params.join(', ')}) - {info.protocol}
+    </> : <>
+      Error loading!
+    </>}
   </>);
 }

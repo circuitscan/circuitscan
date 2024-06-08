@@ -2,6 +2,7 @@ import * as chains from 'viem/chains';
 import { toast } from 'react-hot-toast';
 
 const blobCache = {};
+const infoCache = {};
 
 export function findChain(chainId) {
   for(let chain of Object.keys(chains)) {
@@ -98,6 +99,14 @@ export function extractCircomTemplate(sourceCode, templateName) {
           new RegExp(`template\\s+${templateName}\\((.*?)\\)\\s*\\{`)
         ),
     };
+}
+
+export async function fetchInfo(pkgName) {
+  if(pkgName in infoCache) return infoCache[pkgName];
+  const response = await fetch(`${import.meta.env.VITE_BLOB_URL}${pkgName}/info.json`);
+  const data = await response.json();
+  infoCache[pkgName] = data;
+  return data;
 }
 
 export async function fetchBlob(hash) {
