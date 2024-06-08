@@ -6,7 +6,7 @@ import CodeBlock from './CodeBlock.js';
 import Card from './Card.js';
 import {clsButton} from './Layout.js';
 
-async function loadFileList(pkgName, filename) {
+export async function loadFileList(pkgName, filename) {
   const zipUrl = `${pkgName}/source.zip`;
   const s3 = new S3Client({
     region: import.meta.env.VITE_BB_REGION,

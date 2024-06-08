@@ -35,6 +35,21 @@ export function verifierABI(protocol, pubCount) {
   }
 }
 
+export function getImports(circomCode) {
+  return Array.from(circomCode.matchAll(/include "([^"]+)";/g)).map(x=>x[1]);
+}
+
+export function joinPaths(basePath, relativePath) {
+    // Create a new URL object using the basePath as the base URL
+    const baseUrl = new URL(basePath, 'http://example.com/');
+
+    // Create a new URL object using the relativePath and the base URL
+    const resolvedUrl = new URL(relativePath, baseUrl);
+
+    // Return the pathname of the resolved URL, which is the joined path
+    return resolvedUrl.pathname.substring(1); // Remove the leading '/'
+}
+
 // Thanks ChatGPT
 export function extractCircomTemplate(sourceCode, templateName) {
     // Find the starting index of the template
@@ -109,26 +124,16 @@ export async function fetchInfo(pkgName) {
   return data;
 }
 
-export async function fetchBlob(hash) {
-  if(hash in blobCache) return blobCache[hash];
-  const response = await fetch(import.meta.env.VITE_BLOB_URL + hash);
-  const data = await response.text();
-  blobCache[hash] = data;
-  return data;
-}
-
 export function inputTemplate(details, params) {
   const out = {};
-  const paramsSpl = params
-    .split(',').map(x=>x.trim()).filter(x=>!!x);
   const paramNames = details.tplArgs[1]
     .split(',').map(x=>x.trim()).filter(x=>!!x);
-  if(paramsSpl.length !== paramNames.length)
+  if(params.length !== paramNames.length)
     throw new Error('param_length_mismatch');
 
   const paramObj = paramNames
     .reduce((out, cur, index) => {
-      out[cur] = paramsSpl[index];
+      out[cur] = params[index];
       return out;
     }, {});
   for(let signal of details.signalInputs) {
