@@ -1,41 +1,17 @@
 import {useState, useEffect} from 'react';
-import { S3Client } from '@aws-sdk/client-s3';
-import S3RangeZip from 's3-range-zip';
+import {
+  ArrowDownOnSquareStackIcon,
+} from '@heroicons/react/24/outline';
 
 import CodeBlock from './CodeBlock.js';
 import Card from './Card.js';
-import {clsButton} from './Layout.js';
+import {clsButton, clsIconA} from './Layout.js';
+import {
+  loadListOrFile,
+  formatBytes,
+} from '../utils.js';
 
-export async function loadFileList(pkgName, filename) {
-  const zipUrl = `${pkgName}/source.zip`;
-  const s3 = new S3Client({
-    region: import.meta.env.VITE_BB_REGION,
-    credentials: {
-      accessKeyId: import.meta.env.VITE_READ_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.VITE_READ_SECRET_ACCESS_KEY,
-    },
-    endpoint: import.meta.env.VITE_BB_ENDPOINT,
-  });
-  const zipReader = new S3RangeZip(s3);
-  const fileList = await zipReader.fetchFileList(
-    import.meta.env.VITE_BB_BUCKET,
-    zipUrl
-  );
-
-  if(filename) {
-    const file = await zipReader.downloadFile(
-      import.meta.env.VITE_BB_BUCKET,
-      zipUrl,
-      filename,
-      {encoding: 'utf8'}
-    );
-    return file;
-  }
-
-  return fileList;
-}
-
-export function SourceTree({ pkgName, rootFile }) {
+export function SourceTree({ pkgName, rootFile, sourceSize }) {
   const [list, setList] = useState(null);
   const [source, setSource] = useState(null);
   const [curFile, setCurFile] = useState(rootFile);
@@ -47,7 +23,7 @@ export function SourceTree({ pkgName, rootFile }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        const result = await loadFileList(pkgName);
+        const result = await loadListOrFile(`${pkgName}/source.zip`);
         setList(result.filter(x => x.compressedSize > 0));
       } catch (err) {
         setError(err);
@@ -63,7 +39,7 @@ export function SourceTree({ pkgName, rootFile }) {
     const loadAsyncData = async () => {
       setLoadingFile(true);
       try {
-        const result = await loadFileList(pkgName, curFile);
+        const result = await loadListOrFile(`${pkgName}/source.zip`, curFile);
         setSource(result);
       } catch (err) {
         setFileError(err);
@@ -86,6 +62,15 @@ export function SourceTree({ pkgName, rootFile }) {
     >
       {list.map(file => <option key={file.fileName}>{file.fileName}</option>)}
     </select>
+    <a
+      href={`${import.meta.env.VITE_BLOB_URL}${pkgName}/source.zip`}
+      target="_blank"
+      rel="noopener"
+      title={`Download Sources (${formatBytes(sourceSize)})`}
+      className={`${clsIconA} print:hidden`}
+    >
+      <ArrowDownOnSquareStackIcon className="inline h-5 w-5" />
+    </a>
     {loadingFile ? <CodeBlock code="Loading..." />
       : fileError ? <CodeBlock code="Error loading source!" />
       : <CodeBlock code={source} language="circom" />}

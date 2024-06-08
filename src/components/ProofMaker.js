@@ -5,8 +5,9 @@ import {
   encodeFunctionData,
 } from 'viem';
 import { toast } from 'react-hot-toast';
+// TODO support multiple version of snarkjs
+import * as snarkjs from 'snarkjs';
 
-import {loadFileList} from './SourceTree.js';
 import {clsButton, clsInput} from './Layout.js';
 import {
   findChain,
@@ -15,12 +16,21 @@ import {
   getImports,
   extractCircomTemplate,
   inputTemplate,
+  loadListOrFile,
+  formatBytes,
 } from '../utils.js';
 
-export function ProofMaker({ info, pkgName }) {
+export function ProofMaker({ info, pkgName, chainParam, address }) {
+  const [proofOutput, setProofOutput] = useState();
   const [proofInputs, setProofInputs] = useState('{}');
+  const [pkeySize, setPkeySize] = useState(null);
+  const [pkeyData, setPkeyData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [progress1, setProgress1] = useState([0,0]);
+  const [progress2, setProgress2] = useState([0,0]);
   const [error, setError] = useState(null);
+
+  const deployedChain = findChain(chainParam);
 
   useEffect(() => {
     const loadAsyncData = async () => {
@@ -31,7 +41,7 @@ export function ProofMaker({ info, pkgName }) {
         while(!template) {
           const tryFile = tryFiles[i++];
           if(!tryFile) throw new Error('Template not found!');
-          source = await loadFileList(pkgName, tryFile);
+          source = await loadListOrFile(`${pkgName}/source.zip`, tryFile);
           template = extractCircomTemplate(source, info.circuit.template);
           if(!template) {
             const imports = getImports(source).map(path => joinPaths(tryFile, path));
@@ -42,6 +52,13 @@ export function ProofMaker({ info, pkgName }) {
           template,
           info.circuit.params,
         ), null, 2));
+        const mainPkgList = await loadListOrFile(`${pkgName}/pkg.zip`);
+        setPkeySize({
+          size: mainPkgList.filter(x =>
+            x.fileName === `build/verify_circuit/${info.protocol}_pkey.zkey` ||
+            x.fileName === `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`
+          ).reduce((out, cur) => out + cur.compressedSize, 0),
+        });
       } catch (err) {
         console.error(error);
         setError(err);
@@ -53,10 +70,24 @@ export function ProofMaker({ info, pkgName }) {
     loadAsyncData();
   }, []);
 
-  // TODO generate proofs on the client
+  async function downloadPkey() {
+    // Load simultaneously
+    const finalZkeyPromise = loadListOrFile(`${pkgName}/pkg.zip`,
+      `build/verify_circuit/${info.protocol}_pkey.zkey`, true, setProgress1);
+    const wasmPromise = loadListOrFile(`${pkgName}/pkg.zip`,
+      `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`, true, setProgress2);
+    const finalZkey = await finalZkeyPromise;
+    const wasm = await wasmPromise;
+
+    setPkeyData({ finalZkey, wasm });
+  }
+
   async function prove() {
-    // TODO download proving key
-    // TODO generate proof using snarkjs
+    if(!pkeyData) {
+      toast.dismiss();
+      toast.error('No pkey loaded.');
+      return;
+    }
     let inputs;
     try {
       inputs = JSON.parse(proofInputs);
@@ -66,21 +97,21 @@ export function ProofMaker({ info, pkgName }) {
     }
     toast.dismiss();
     toast.loading('Generating proof...');
-    const protocol = parsedData.verified.payload.protocol;
-    const resultProve = await post(import.meta.env.VITE_API_URL_CIRCOM, { payload: {
-      action: 'prove',
-      circuitHash: parsedData.verified.circuitHash,
-      protocol,
-      input: inputs,
-    }});
-    // Difference between local Docker/AWS deployed
-    const result = 'body' in resultProve ? JSON.parse(resultProve.body) : resultProve;
-    if('errorType' in result) {
+    let proof;
+    try {
+      proof = await snarkjs[info.protocol].fullProve(inputs, pkeyData.wasm, pkeyData.finalZkey);
+    } catch(error) {
       toast.dismiss();
-      toast.error(result.errorMessage);
+      toast.error(error.message);
       return;
     }
-    const calldata = JSON.parse(result.calldata);
+
+    const calldata = JSON.parse('[' +
+      getCalldata(proof.proof, info.protocol)
+      + ',' +
+      publicSignalsCalldata(proof.publicSignals)
+      + ']');
+    setProofOutput({calldata, proof});
 
     const publicClient = createPublicClient({
       chain: deployedChain,
@@ -88,7 +119,7 @@ export function ProofMaker({ info, pkgName }) {
     });
 
     const funcData = encodeFunctionData({
-      abi: verifierABI(protocol, result.proof.publicSignals.length),
+      abi: verifierABI(info.protocol, proof.publicSignals.length),
       functionName: 'verifyProof',
       args: calldata,
     });
@@ -97,7 +128,6 @@ export function ProofMaker({ info, pkgName }) {
       data: funcData,
       to: address,
     });
-    setProofOutput(result);
     const success = parseInt(callResult.data) > 0;
     if(!success) {
       toast.dismiss();
@@ -110,7 +140,7 @@ export function ProofMaker({ info, pkgName }) {
   }
   return (<>
     {loading ? <>
-      Loading...
+      Loading proof input template...
     </> : error ? <>
       Error loading!
     </> : <>
@@ -120,21 +150,36 @@ export function ProofMaker({ info, pkgName }) {
         onChange={(e) => setProofInputs(e.target.value)}
         value={proofInputs}
       />
-      {/*
-      <button
-        className={`
-          ${clsButton}
-          mt-3
-        `}
-        onClick={prove}
-      >Generate Proof</button>
+      <div className="flex flex-col">
+        <button
+          disabled={pkeyData || progress1[1] > 0}
+          className={`
+            ${clsButton}
+            mt-3
+          `}
+          onClick={downloadPkey}
+        >Download Final ZKey and WASM ({formatBytes(pkeySize.size)})</button>
+        <progress
+          className="rounded-md w-full h-4 bg-gray-200 dark:bg-gray-800"
+          value={progress1[0] + progress2[0]}
+          max={progress1[1] + progress2[1]}
+          />
+        <button
+          disabled={!pkeyData}
+          className={`
+            ${clsButton}
+            mt-3
+          `}
+          onClick={prove}
+        >Generate Proof</button>
+      </div>
       {proofOutput && <>
         <p className="text-l font-bold">
           verifyProof calldata
         </p>
         <textarea
           className={`${clsInput} min-h-32`}
-          value={JSON.stringify(JSON.parse(proofOutput.calldata), null, 2)}
+          value={JSON.stringify(proofOutput.calldata, null, 2)}
           readOnly
         />
         <p className="text-l font-bold">Public Signals</p>
@@ -144,7 +189,85 @@ export function ProofMaker({ info, pkgName }) {
           readOnly
         />
       </>}
-      */}
     </>}
   </>);
 }
+
+// The following is adapted from circomkit/src/utils/calldata.ts
+/** Makes each value 32-bytes long hexadecimal. Does not check for overflows! */
+function valuesToPaddedUint256s(vals) {
+  return vals.map(val => '0x' + BigInt(val).toString(16).padStart(64, '0'));
+}
+
+/** Wraps a string with double quotes. */
+function withQuotes(vals) {
+  return vals.map(val => `"${val}"`);
+}
+
+function publicSignalsCalldata(pubs) {
+  const pubs256 = valuesToPaddedUint256s(pubs);
+  return `[${pubs256.map(s => `"${s}"`).join(',')}]`;
+}
+
+
+function getCalldata(proof, protocol) {
+  switch (protocol) {
+    case 'groth16':
+      return groth16Calldata(proof);
+    case 'plonk':
+      return plonkCalldata(proof);
+    case 'fflonk':
+      return fflonkCalldata(proof);
+    default:
+      throw 'Unknown protocol:' + protocol;
+  }
+}
+
+function fflonkCalldata(proof) {
+  const vals = valuesToPaddedUint256s([
+    proof.polynomials.C1[0], proof.polynomials.C1[1],
+    proof.polynomials.C2[0], proof.polynomials.C2[1],
+    proof.polynomials.W1[0], proof.polynomials.W1[1],
+    proof.polynomials.W2[0], proof.polynomials.W2[1],
+    proof.evaluations.ql, proof.evaluations.qr, proof.evaluations.qm,
+    proof.evaluations.qo, proof.evaluations.qc,
+    proof.evaluations.s1, proof.evaluations.s2, proof.evaluations.s3,
+    proof.evaluations.a, proof.evaluations.b, proof.evaluations.c,
+    proof.evaluations.z, proof.evaluations.zw,
+    proof.evaluations.t1w, proof.evaluations.t2w,
+    proof.evaluations.inv,
+  ]);
+
+  return `[${withQuotes(vals).join(',')}]`;
+}
+
+function plonkCalldata(proof) {
+  const vals = valuesToPaddedUint256s([
+    proof.A[0], proof.A[1], proof.B[0], proof.B[1], proof.C[0], proof.C[1],
+    proof.Z[0], proof.Z[1],
+    proof.T1[0], proof.T1[1], proof.T2[0], proof.T2[1], proof.T3[0], proof.T3[1],
+    proof.Wxi[0], proof.Wxi[1],
+    proof.Wxiw[0], proof.Wxiw[1],
+    proof.eval_a, proof.eval_b, proof.eval_c,
+    proof.eval_s1, proof.eval_s2,
+    proof.eval_zw,
+  ]);
+
+  return `[${withQuotes(vals).join(',')}]`;
+}
+
+function groth16Calldata(proof) {
+  const pA = valuesToPaddedUint256s([proof.pi_a[0], proof.pi_a[1]]);
+  const pC = valuesToPaddedUint256s([proof.pi_c[0], proof.pi_c[1]]);
+
+  // note that pB are reversed, notice the indexing is [1] and [0] instead of [0] and [1].
+  const pB0 = valuesToPaddedUint256s([proof.pi_b[0][1], proof.pi_b[0][0]]);
+  const pB1 = valuesToPaddedUint256s([proof.pi_b[1][1], proof.pi_b[1][0]]);
+
+  return [
+    `[${withQuotes(pA).join(', ')}]`,
+    `[[${withQuotes(pB0).join(', ')}], [${withQuotes(pB1).join(', ')}]]`,
+    `[${withQuotes(pC).join(', ')}]`,
+  ].join(',');
+}
+

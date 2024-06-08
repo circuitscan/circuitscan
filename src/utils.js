@@ -1,5 +1,7 @@
 import * as chains from 'viem/chains';
 import { toast } from 'react-hot-toast';
+import { S3Client } from '@aws-sdk/client-s3';
+import S3RangeZip from 's3-range-zip';
 
 const blobCache = {};
 const infoCache = {};
@@ -33,6 +35,52 @@ export function verifierABI(protocol, pubCount) {
   } else if(protocol === 'groth16') {
     return [{"inputs":[{"internalType":"uint256[2]","name":"_pA","type":"uint256[2]"},{"internalType":"uint256[2][2]","name":"_pB","type":"uint256[2][2]"},{"internalType":"uint256[2]","name":"_pC","type":"uint256[2]"},{"internalType":`uint256[${pubCount}]`,"name":"_pubSignals","type":`uint256[${pubCount}]`}],"name":"verifyProof","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
   }
+}
+
+export function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    // ChatGPT predicts large circuits ahead!
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export async function loadListOrFile(zipUrl, filename, returnBinary = false, setProgress) {
+  const s3 = new S3Client({
+    region: import.meta.env.VITE_BB_REGION,
+    credentials: {
+      accessKeyId: import.meta.env.VITE_READ_ACCESS_KEY_ID,
+      secretAccessKey: import.meta.env.VITE_READ_SECRET_ACCESS_KEY,
+    },
+    endpoint: import.meta.env.VITE_BB_ENDPOINT,
+  });
+  const zipReader = new S3RangeZip(s3);
+  const fileList = await zipReader.fetchFileList(
+    import.meta.env.VITE_BB_BUCKET,
+    zipUrl
+  );
+
+  if(filename) {
+    const file = await zipReader.downloadFile(
+      import.meta.env.VITE_BB_BUCKET,
+      zipUrl,
+      filename,
+      {
+        encoding: returnBinary ? undefined : 'utf8',
+        onProgress(received, total) {
+          setProgress && setProgress([received, total]);
+        },
+      }
+    );
+    return file;
+  }
+
+  return fileList;
 }
 
 export function getImports(circomCode) {

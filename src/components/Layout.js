@@ -4,10 +4,11 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { isAddress } from 'viem';
 
 export const clsButton = `
-  px-4 py-2 mr-4 mb-4 bg-neutral-100 dark:bg-neutral-900 dark:text-white rounded-md
+  px-4 py-2 mx-2 mb-4 bg-neutral-100 dark:bg-neutral-900 dark:text-white rounded-md
   hover:bg-neutral-200 active:bg-neutral-300
   dark:hover:bg-neutral-800 dark:active:bg-neutral-700
   border border-neutral-300 dark:border-neutral-600
+  disabled:dark:bg-neutral-800 disabled:text-gray-400 disabled:dark:text-gray-600
 `;
 
 export const clsInput = `

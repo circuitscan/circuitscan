@@ -6,7 +6,9 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentDuplicateIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  FolderArrowDownIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 
 import useDarkMode from '../components/useDarkMode.js';
@@ -18,12 +20,11 @@ import {
   findChain,
   setClipboard,
   fetchInfo,
+  formatBytes,
+  loadListOrFile,
 } from '../utils.js';
 
 export function Address() {
-  const [proofInputs, setProofInputs] = useState('{}');
-  const [proofOutput, setProofOutput] = useState();
-  const [circomSource, setCircomSource] = useState();
   const navigate = useNavigate();
   const darkMode = useDarkMode();
   const {address, chain: chainParam} = useParams();
@@ -112,6 +113,26 @@ export function Address() {
             className={`${clsIconA} print:hidden`}
           >
             <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
+          </a>}&nbsp;
+
+          {isAddressOnThisChain && <a
+            href={`${import.meta.env.VITE_BLOB_URL}${data[chainParam].pkg_name}/pkg.zip`}
+            target="_blank"
+            rel="noopener"
+            title={`Download Entire Build (${formatBytes(data[chainParam].info.pkgSize)})`}
+            className={`${clsIconA} print:hidden`}
+          >
+            <FolderArrowDownIcon className="inline h-5 w-5" />
+          </a>}&nbsp;
+
+          {isAddressOnThisChain && <a
+            href={`https://remix.ethereum.org/address/${address}`}
+            target="_blank"
+            rel="noopener"
+            title="View on Remix IDE"
+            className={`${clsIconA} print:hidden`}
+          >
+            <PencilSquareIcon className="inline h-5 w-5" />
           </a>}
 
         </h2>
@@ -189,6 +210,7 @@ export function Address() {
               <ProofMaker
                 pkgName={data[chainParam].pkg_name}
                 info={data[chainParam].info}
+                {...{chainParam, address}}
               />
             </Card>
           </div>
@@ -196,6 +218,7 @@ export function Address() {
           <SourceTree
             pkgName={data[chainParam].pkg_name}
             rootFile={data[chainParam].info.circuit.file + '.circom'}
+            sourceSize={data[chainParam].info.sourceSize}
           />
 
         </div>
