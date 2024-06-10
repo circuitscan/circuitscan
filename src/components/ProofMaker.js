@@ -158,7 +158,12 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
             mt-3
           `}
           onClick={downloadPkey}
-        >Download Final ZKey and WASM ({formatBytes(pkeySize.size)})</button>
+        >
+          Download Final ZKey and WASM&nbsp;
+          <span className="whitespace-nowrap inline-block">
+            ({formatBytes(pkeySize.size)})
+          </span>
+        </button>
         <progress
           className="rounded-md w-full h-4 bg-gray-200 dark:bg-gray-800"
           value={progress1[0] + progress2[0]}

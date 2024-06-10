@@ -56,7 +56,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
 
   return <Card>
     <select
-      className={clsButton}
+      className={`w-[calc(100%-3rem)] ${clsButton}`}
       onChange={e => setCurFile(e.target.value)}
       value={curFile}
     >

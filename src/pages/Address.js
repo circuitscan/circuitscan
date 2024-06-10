@@ -96,44 +96,46 @@ export function Address() {
 
           <span className="mr-1 align-middle">{address}</span>
 
-          <a
-            href={`web3://${address}`}
-            onClick={() => setClipboard(address)}
-            title="Copy Address to Clipboard"
-            className={`${clsIconA} print:hidden`}
-          >
-            <DocumentDuplicateIcon className="inline h-5 w-5" />
-          </a>&nbsp;
+          <span className="whitespace-nowrap inline-block">
+            <a
+              href={`web3://${address}`}
+              onClick={() => setClipboard(address)}
+              title="Copy Address to Clipboard"
+              className={`${clsIconA} print:hidden`}
+            >
+              <DocumentDuplicateIcon className="inline h-5 w-5" />
+            </a>&nbsp;
 
-          {deployedChain && <a
-            href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
-            target="_blank"
-            rel="noopener"
-            title="View on Block Explorer"
-            className={`${clsIconA} print:hidden`}
-          >
-            <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
-          </a>}&nbsp;
+            {deployedChain && <a
+              href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
+              target="_blank"
+              rel="noopener"
+              title="View on Block Explorer"
+              className={`${clsIconA} print:hidden`}
+            >
+              <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
+            </a>}&nbsp;
 
-          {isAddressOnThisChain && <a
-            href={`${import.meta.env.VITE_BLOB_URL}${data[chainParam].pkg_name}/pkg.zip`}
-            target="_blank"
-            rel="noopener"
-            title={`Download Entire Build (${formatBytes(data[chainParam].info.pkgSize)})`}
-            className={`${clsIconA} print:hidden`}
-          >
-            <FolderArrowDownIcon className="inline h-5 w-5" />
-          </a>}&nbsp;
+            {isAddressOnThisChain && <a
+              href={`${import.meta.env.VITE_BLOB_URL}${data[chainParam].pkg_name}/pkg.zip`}
+              target="_blank"
+              rel="noopener"
+              title={`Download Entire Build (${formatBytes(data[chainParam].info.pkgSize)})`}
+              className={`${clsIconA} print:hidden`}
+            >
+              <FolderArrowDownIcon className="inline h-5 w-5" />
+            </a>}&nbsp;
 
-          {isAddressOnThisChain && <a
-            href={`https://remix.ethereum.org/address/${address}`}
-            target="_blank"
-            rel="noopener"
-            title="View on Remix IDE"
-            className={`${clsIconA} print:hidden`}
-          >
-            <PencilSquareIcon className="inline h-5 w-5" />
-          </a>}
+            {isAddressOnThisChain && <a
+              href={`https://remix.ethereum.org/address/${address}`}
+              target="_blank"
+              rel="noopener"
+              title="View on Remix IDE"
+              className={`${clsIconA} print:hidden`}
+            >
+              <PencilSquareIcon className="inline h-5 w-5" />
+            </a>}
+          </span>
 
         </h2>
         {data && <>
