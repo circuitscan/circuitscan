@@ -1,6 +1,5 @@
 import * as chains from 'viem/chains';
 import { toast } from 'react-hot-toast';
-import { S3Client } from '@aws-sdk/client-s3';
 import S3RangeZip from 's3-range-zip';
 
 const blobCache = {};
@@ -51,15 +50,7 @@ export function formatBytes(bytes, decimals = 2) {
 }
 
 export async function loadListOrFile(zipUrl, filename, returnBinary = false, setProgress) {
-  const s3 = new S3Client({
-    region: import.meta.env.VITE_BB_REGION,
-    credentials: {
-      accessKeyId: import.meta.env.VITE_READ_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.VITE_READ_SECRET_ACCESS_KEY,
-    },
-    endpoint: import.meta.env.VITE_BB_ENDPOINT,
-  });
-  const zipReader = new S3RangeZip(s3);
+  const zipReader = new S3RangeZip((bucketName, key) => `https://${bucketName}/${key}`);
   const fileList = await zipReader.fetchFileList(
     import.meta.env.VITE_BB_BUCKET,
     zipUrl
