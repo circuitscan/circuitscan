@@ -78,12 +78,12 @@ export async function verifyCircom(event) {
 }
 
 async function compiledSource(pkgName) {
-  const resp = await fetch(process.env.BLOB_URL + pkgName + '/verifier.sol');
+  const resp = await fetch(process.env.BLOB_URL + 'build/' + pkgName + '/verifier.sol');
   return resp.text();
 }
 
 async function pkgInfoJson(pkgName) {
-  const resp = await fetch(process.env.BLOB_URL + pkgName + '/info.json');
+  const resp = await fetch(process.env.BLOB_URL + 'build/' + pkgName + '/info.json');
   return resp.text();
 }
 

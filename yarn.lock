@@ -4089,10 +4089,10 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-s3-range-zip@1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/s3-range-zip/-/s3-range-zip-1.0.2.tgz#f6e1d3e6a22ff6bb81aa79431af2fb1da1f32c14"
-  integrity sha512-7R1fagSbbfBqfoTJ8VNt89rXDsZFUwUq6cm2bd43x/5ddIyg/WRHIoz1I1XspH31+WF/v2x7x9AxjGHCbiQPfA==
+s3-range-zip@1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/s3-range-zip/-/s3-range-zip-1.0.3.tgz#ab118dc7dbfa2c1576b405044e251f2603627af4"
+  integrity sha512-4aL3BSfSyo0kwGbLGCqOlnvH/0A4d0bpypPL+qltL5wPsG8KKBUt0vdd19+NWciJ5CBTCqr2OUu461H7dW18Xg==
   dependencies:
     pako "^2.1.0"
 

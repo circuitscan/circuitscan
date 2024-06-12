@@ -41,7 +41,7 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
         while(!template) {
           const tryFile = tryFiles[i++];
           if(!tryFile) throw new Error('Template not found!');
-          source = await loadListOrFile(`${pkgName}/source.zip`, tryFile);
+          source = await loadListOrFile(`build/${pkgName}/source.zip`, tryFile);
           template = extractCircomTemplate(source, info.circuit.template);
           if(!template) {
             const imports = getImports(source).map(path => joinPaths(tryFile, path));
@@ -52,7 +52,7 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
           template,
           info.circuit.params,
         ), null, 2));
-        const mainPkgList = await loadListOrFile(`${pkgName}/pkg.zip`);
+        const mainPkgList = await loadListOrFile(`build/${pkgName}/pkg.zip`);
         setPkeySize({
           size: mainPkgList.filter(x =>
             x.fileName === `build/verify_circuit/${info.protocol}_pkey.zkey` ||
@@ -72,9 +72,9 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
 
   async function downloadPkey() {
     // Load simultaneously
-    const finalZkeyPromise = loadListOrFile(`${pkgName}/pkg.zip`,
+    const finalZkeyPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
       `build/verify_circuit/${info.protocol}_pkey.zkey`, true, setProgress1);
-    const wasmPromise = loadListOrFile(`${pkgName}/pkg.zip`,
+    const wasmPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
       `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`, true, setProgress2);
     const finalZkey = await finalZkeyPromise;
     const wasm = await wasmPromise;

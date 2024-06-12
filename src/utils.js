@@ -50,7 +50,7 @@ export function formatBytes(bytes, decimals = 2) {
 }
 
 export async function loadListOrFile(zipUrl, filename, returnBinary = false, setProgress) {
-  const zipReader = new S3RangeZip((bucketName, key) => `https://${bucketName}/${key}`);
+  const zipReader = new S3RangeZip((bucketName, key) => `https://${bucketName}.s3.${import.meta.env.VITE_BB_REGION}.amazonaws.com/${key}`);
   const fileList = await zipReader.fetchFileList(
     import.meta.env.VITE_BB_BUCKET,
     zipUrl
@@ -157,7 +157,7 @@ export function extractCircomTemplate(sourceCode, templateName) {
 
 export async function fetchInfo(pkgName) {
   if(pkgName in infoCache) return infoCache[pkgName];
-  const response = await fetch(`${import.meta.env.VITE_BLOB_URL}${pkgName}/info.json`);
+  const response = await fetch(`${import.meta.env.VITE_BLOB_URL}build/${pkgName}/info.json`);
   const data = await response.json();
   infoCache[pkgName] = data;
   return data;

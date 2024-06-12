@@ -23,7 +23,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        const result = await loadListOrFile(`${pkgName}/source.zip`);
+        const result = await loadListOrFile(`build/${pkgName}/source.zip`);
         setList(result.filter(x => x.compressedSize > 0));
       } catch (err) {
         setError(err);
@@ -39,7 +39,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     const loadAsyncData = async () => {
       setLoadingFile(true);
       try {
-        const result = await loadListOrFile(`${pkgName}/source.zip`, curFile);
+        const result = await loadListOrFile(`build/${pkgName}/source.zip`, curFile);
         setSource(result);
       } catch (err) {
         setFileError(err);
@@ -63,7 +63,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
       {list.map(file => <option key={file.fileName}>{file.fileName}</option>)}
     </select>
     <a
-      href={`${import.meta.env.VITE_BLOB_URL}${pkgName}/source.zip`}
+      href={`${import.meta.env.VITE_BLOB_URL}build/${pkgName}/source.zip`}
       target="_blank"
       rel="noopener"
       title={`Download Sources (${formatBytes(sourceSize)})`}
