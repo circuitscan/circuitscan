@@ -117,7 +117,7 @@ export function Address() {
             </a>}&nbsp;
 
             {isAddressOnThisChain && <a
-              href={`${import.meta.env.VITE_BLOB_URL}${data[chainParam].pkg_name}/pkg.zip`}
+              href={`${import.meta.env.VITE_BLOB_URL}build/${data[chainParam].pkg_name}/pkg.zip`}
               target="_blank"
               rel="noopener"
               title={`Download Entire Build (${formatBytes(data[chainParam].info.pkgSize)})`}
