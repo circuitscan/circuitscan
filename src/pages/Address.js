@@ -197,6 +197,7 @@ export function Address() {
                 <dt className="text-l font-bold">Template</dt>
                 <dd className="pl-6">{data[chainParam].info.circuit.template}</dd>
                 <dt className="text-l font-bold">Params</dt>
+                {/* TODO display param names too */}
                 <dd className="pl-6">{data[chainParam].info.circuit.params
                   ? data[chainParam].info.circuit.params.join(', ')
                   : <span className="italic">None</span>
@@ -217,6 +218,7 @@ export function Address() {
             </Card>
           </div>
 
+          {/* TODO tabs to switch between sources and compiler log output from status.json */}
           <SourceTree
             pkgName={data[chainParam].pkg_name}
             rootFile={data[chainParam].info.circuit.file + '.circom'}

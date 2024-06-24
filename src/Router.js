@@ -3,6 +3,7 @@ import { Layout } from './components/Layout.js';
 import { Home } from './pages/Home.js';
 import { Address } from './pages/Address.js';
 
+// TODO api-key page SIWE generate key, store on s3
 export function Router() {
   const router = createBrowserRouter([
     {

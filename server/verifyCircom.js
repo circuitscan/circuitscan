@@ -52,6 +52,7 @@ export async function verifyCircom(event) {
   });
 
   // maintain list of newest n verifiers
+  // TODO make a new file `latest-queue/${chain.chain.id}-${event.payload.contact}.json` that is then aggregated by a separate service every minute into latest.json so that multiple verifications can occur simultaneously
   await transformS3Json(process.env.ASSOC_BUCKET, `latest.json`, data => {
     if(!('list' in data)) {
       data.list = [];
