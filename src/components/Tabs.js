@@ -23,6 +23,23 @@ const TabComponent = ({ tabs }) => {
     window.location.hash = toHash(activeTab);
   }, [activeTab]);
 
+  // Listen for hash changes and update the active tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      const tab = Object.keys(tabs).find((tabLabel) => toHash(tabLabel) === hash);
+      if (tab) {
+        setActiveTab(tab);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [tabs]);
+
   return (
     <div>
       <div className="mx-3 flex border-b border-neutral-300 dark:border-neutral-600">

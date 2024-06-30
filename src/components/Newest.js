@@ -65,7 +65,7 @@ export default function Newest() {
                     border-b border-neutral-300 dark:border-neutral-600
                     ${clsIconA}
                   `}
-                  to={`/chain/${row.chain}/address/${row.address}`}
+                  to={`/chain/${row.chain}/address/${row.address}#source-code`}
                 >
                   <span className={`
                     inline-block pl-3 pr-2 py-1 mr-3
