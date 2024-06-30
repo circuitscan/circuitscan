@@ -54,7 +54,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
   if (loading) return <Card>Loading source file list...</Card>;
   if (error) return <Card>Error loading source file list: {error.message}</Card>;
 
-  return <Card>
+  return <Card fullWidth={true}>
     <select
       className={`w-[calc(100%-3rem)] ${clsButton}`}
       onChange={e => setCurFile(e.target.value)}

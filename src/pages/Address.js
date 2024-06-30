@@ -11,10 +11,8 @@ import {
   PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 
-import useDarkMode from '../components/useDarkMode.js';
 import Card from '../components/Card.js';
-import {SourceTree} from '../components/SourceTree.js';
-import {ProofMaker} from '../components/ProofMaker.js';
+import {CircomDetails} from '../components/CircomDetails.js';
 import {clsIconA} from '../components/Layout.js';
 import {
   findChain,
@@ -26,7 +24,6 @@ import {
 
 export function Address() {
   const navigate = useNavigate();
-  const darkMode = useDarkMode();
   const {address, chain: chainParam} = useParams();
   const isValid = isAddress(address);
   const [data, setData] = useState(null);
@@ -184,47 +181,11 @@ export function Address() {
         </Card>
       </> : data && isAddressOnThisChain ? <>
         <div className="">
-
-          <div className="flex flex-col sm:flex-row">
-            <Card>
-              <dl>
-                <dt className="text-l font-bold">Compiler</dt>
-                <dd className="pl-6">{data[chainParam].info.circomPath}</dd>
-                <dt className="text-l font-bold">Protocol</dt>
-                <dd className="pl-6">{data[chainParam].info.protocol}</dd>
-                <dt className="text-l font-bold">SnarkJS Version</dt>
-                <dd className="pl-6">{data[chainParam].info.snarkjsVersion}</dd>
-                <dt className="text-l font-bold">Template</dt>
-                <dd className="pl-6">{data[chainParam].info.circuit.template}</dd>
-                <dt className="text-l font-bold">Params</dt>
-                {/* TODO display param names too */}
-                <dd className="pl-6">{data[chainParam].info.circuit.params
-                  ? data[chainParam].info.circuit.params.join(', ')
-                  : <span className="italic">None</span>
-                }</dd>
-                <dt className="text-l font-bold">Pubs</dt>
-                <dd className="pl-6">{data[chainParam].info.circuit.pubs
-                  ? data[chainParam].info.circuit.pubs.join(', ')
-                  : <span className="italic">None</span>
-                }</dd>
-              </dl>
-            </Card>
-            <Card>
-              <ProofMaker
-                pkgName={data[chainParam].pkg_name}
-                info={data[chainParam].info}
-                {...{chainParam, address}}
-              />
-            </Card>
-          </div>
-
-          {/* TODO tabs to switch between sources and compiler log output from status.json */}
-          <SourceTree
+          <CircomDetails
             pkgName={data[chainParam].pkg_name}
-            rootFile={data[chainParam].info.circuit.file + '.circom'}
-            sourceSize={data[chainParam].info.sourceSize}
-          />
-
+            info={data[chainParam].info}
+            {...{chainParam, address}}
+            />
         </div>
       </> : <>
         <p>Unkown error occurred!</p>

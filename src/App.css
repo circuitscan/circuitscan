@@ -29,6 +29,16 @@
 #address code .token.operator {
   background: none;
 }
+@media (prefers-color-scheme: dark) {
+  #address .MuiChartsAxis-line,
+  #address .MuiChartsAxis-tick {
+    stroke: #eee;
+  }
+  #address .MuiChartsAxis-tickLabel {
+    fill: #eee;
+  }
+}
+
 
 
 #logo {

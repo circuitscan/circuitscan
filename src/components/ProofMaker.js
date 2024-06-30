@@ -20,7 +20,7 @@ import {
   formatBytes,
 } from '../utils.js';
 
-export function ProofMaker({ info, pkgName, chainParam, address }) {
+export function ProofMaker({ info, pkgName, chainParam, address, template }) {
   const [proofOutput, setProofOutput] = useState();
   const [proofInputs, setProofInputs] = useState('{}');
   const [pkeySize, setPkeySize] = useState(null);
@@ -35,19 +35,6 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        // Find the template in the sources somewhere
-        let tryFiles = [ info.circuit.file + '.circom' ];
-        let source, template, i = 0;
-        while(!template) {
-          const tryFile = tryFiles[i++];
-          if(!tryFile) throw new Error('Template not found!');
-          source = await loadListOrFile(`build/${pkgName}/source.zip`, tryFile);
-          template = extractCircomTemplate(source, info.circuit.template);
-          if(!template) {
-            const imports = getImports(source).map(path => joinPaths(tryFile, path));
-            tryFiles = [ ...tryFiles, ...imports ];
-          }
-        }
         setProofInputs(JSON.stringify(inputTemplate(
           template,
           info.circuit.params,
@@ -60,7 +47,7 @@ export function ProofMaker({ info, pkgName, chainParam, address }) {
           ).reduce((out, cur) => out + cur.compressedSize, 0),
         });
       } catch (err) {
-        console.error(error);
+        console.error(err);
         setError(err);
       } finally {
         setLoading(false);

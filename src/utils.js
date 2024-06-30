@@ -36,6 +36,20 @@ export function verifierABI(protocol, pubCount) {
   }
 }
 
+export function formatDuration(seconds) {
+    // Calculate hours, minutes, and seconds
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    // Format each part to ensure two digits where appropriate
+    const formattedMins = hrs > 0 ? String(mins).padStart(2, '0') : mins;
+    const formattedSecs = String(secs).padStart(2, '0');
+
+    // Construct the time string
+    return hrs > 0 ? `${hrs}:${formattedMins}:${formattedSecs}` : `${formattedMins}:${formattedSecs}`;
+}
+
 export function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
 
