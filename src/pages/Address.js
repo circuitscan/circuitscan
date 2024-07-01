@@ -72,7 +72,7 @@ export function Address() {
     {!isValid ? (<>
       <p>Invalid Address!</p>
     </>) : (<>
-      <div className="px-4 pt-6 pb-0 max-w-7xl mx-auto xl:px-0">
+      <div className="px-4 pt-6 pb-0 mx-auto">
         <h2 className="text-l text-ellipsis overflow-hidden mb-3">
           {data && <div className="inline-block mr-1 align-middle">
             <div className={`

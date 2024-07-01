@@ -9,7 +9,7 @@ const CodeBlock = ({ code, language }) => {
 
   return (
     <pre
-      className="line-numbers overflow-auto w-full h-96 bg-slate-100 dark:bg-slate-900 dark:text-white"
+      className="line-numbers overflow-x-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
     >
       <code className={`language-${language}`}>
         {code}

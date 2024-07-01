@@ -61,7 +61,7 @@ export function Layout() {
       `}>
         <div id="logo" className={`
           px-3 py-2 sm:py-3
-          max-w-7xl mx-auto
+          mx-auto
           flex-col sm:flex-row items-end sm:items-center
           flex justify-between
         `}>
