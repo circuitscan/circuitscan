@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { isAddress } from 'viem';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGithub, faTelegram, faMedium } from '@fortawesome/free-brands-svg-icons';
 
 export const clsButton = `
   px-4 py-2 mx-2 mb-4 bg-neutral-100 dark:bg-neutral-900 dark:text-white rounded-md
@@ -89,5 +91,16 @@ export function Layout() {
         </div>
       </header>
       <Outlet />
+      <footer className="flex space-x-3 justify-center print:hidden">
+        <a href="https://github.com/circuitscan" rel="noopener" target="_blank" title="Circuitscan on Github">
+          <FontAwesomeIcon icon={faGithub} size="xl" />
+        </a>&nbsp;
+        <a href="https://medium.com/@circuitscan" rel="noopener" target="_blank" title="Circuitscan development blog">
+          <FontAwesomeIcon icon={faMedium} size="xl" />
+        </a>
+        <a href="https://t.me/circuitscan" rel="noopener" target="_blank" title="Circuitscan Telegram group">
+          <FontAwesomeIcon icon={faTelegram} size="xl" />
+        </a>
+      </footer>
   </>);
 }

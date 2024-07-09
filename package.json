@@ -14,6 +14,9 @@
     "deploy:frontend": "rm -rf dist/ && vite build && aws s3 rm s3://circuitscan.org/ --recursive && aws s3 sync dist/ s3://circuitscan.org/"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-brands-svg-icons": "^6.5.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@heroicons/react": "^2.1.3",
     "@mui/material": "^5.15.21",
     "@mui/x-charts": "^7.8.0",
