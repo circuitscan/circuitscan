@@ -10,6 +10,7 @@ import {
   FolderArrowDownIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline';
+import bsUrls from 'blockscout-urls';
 
 import Card from '../components/Card.js';
 import {CircomDetails} from '../components/CircomDetails.js';
@@ -104,7 +105,7 @@ export function Address() {
             </a>&nbsp;
 
             {deployedChain && <a
-              href={`${deployedChain.blockExplorers.default.url}/address/${address}`}
+              href={`${deployedChain.id in bsUrls ? 'https://' + bsUrls[deployedChain.id] : deployedChain.blockExplorers.default.url}/address/${address}`}
               target="_blank"
               rel="noopener"
               title="View on Block Explorer"

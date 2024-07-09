@@ -23,6 +23,7 @@
     "@rainbow-me/rainbowkit": "^2.0.5",
     "@tanstack/react-query": "^5.29.0",
     "ansi-to-html": "^0.7.2",
+    "blockscout-urls": "^1.0.0",
     "prismjs": "^1.29.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

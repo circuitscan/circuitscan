@@ -2075,6 +2075,11 @@ blake2b-wasm@^2.4.0:
     b4a "^1.0.1"
     nanoassert "^2.0.0"
 
+blockscout-urls@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/blockscout-urls/-/blockscout-urls-1.0.0.tgz#5565281011151fed0336b2485715c337cc8b4f76"
+  integrity sha512-ZPlGyZez9//+WUZbOwtqHU98MpHxns6mV65r5NVvISQGFt+uWDaYCldbJ6xVHikgdr/MUaWsIvjiJiPucfR3lA==
+
 bluebird@^3.7.2:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
