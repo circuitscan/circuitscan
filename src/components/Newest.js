@@ -1,6 +1,5 @@
 import {useState, useEffect} from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 
 import Card from './Card.js';
 import {clsIconA, clsButton} from './Layout.js';
@@ -56,7 +55,7 @@ export default function Newest() {
             border-b border-neutral-300 dark:border-neutral-600
           `}>Latest Verified Circuit Verifiers</h3>
           <ul className="mb-6">
-            {list.map((row, index) => (
+            {list.slice(0, PERPAGE * (page + 1)).map((row, index) => (
               <li key={index} className={`
               `}>
                 <Link
@@ -88,7 +87,7 @@ export default function Newest() {
               </li>
             ))}
           </ul>
-          {PERPAGE * page >= list.length &&
+          {PERPAGE * page < list.length &&
             <button onClick={() => setPage(page + 1)} className={clsButton}>
               Load More...
             </button>}
