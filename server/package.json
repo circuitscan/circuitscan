@@ -5,6 +5,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.590.0",
     "diff": "5.2.0",
+    "verified-solidity-source": "0.0.1",
     "viem": "2.x"
   }
 }

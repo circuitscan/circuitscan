@@ -1,6 +1,6 @@
 import {diffTrimmedLines} from 'diff';
+import verifiedSource from 'verified-solidity-source';
 
-import {findChain} from './chains.js';
 import {transformS3Json} from './utils.js';
 
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
@@ -8,10 +8,7 @@ const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
 
 export async function verifyCircom(event) {
-  if(!event.payload.chainId)
-    throw new Error('missing_chainId');
-  const chain = findChain(event.payload.chainId);
-  if(!chain)
+  if(isNaN(event.payload.chainId))
     throw new Error('invalid_chainId');
   if(!event.payload.contract)
     throw new Error('missing_contract');
@@ -19,7 +16,7 @@ export async function verifyCircom(event) {
     throw new Error('missing_pkgName');
 
   // Load etherscan verified contract
-  const verified = await etherscanSource(chain, event.payload.contract);
+  const verified = await verifiedSource(event.payload.contract, event.payload.chainId);
   if(!verified)
     throw new Error('contract_not_verified');
 
@@ -32,7 +29,7 @@ export async function verifyCircom(event) {
   // e.g. zkp2p venmo send processor
   // https://sepolia.etherscan.io/address/0x8644C2B4293923BF60c909171F089f4c5F75474c
   for(let source of Object.values(verified)) {
-    if(acceptableDiff(source, compiled)) {
+    if(acceptableDiff(source.content, compiled)) {
       foundMatch = true;
       break;
     }
@@ -45,20 +42,20 @@ export async function verifyCircom(event) {
 
   // save pkgName association in s3 blob/assoc/<address>.json {[chainid]: "<pkgname>"}
   await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${event.payload.contract}.json`, data => {
-    if(chain.chain.id in data)
+    if(event.payload.chainId in data)
       throw new Error('already_verified');
-    data[chain.chain.id] = event.payload.pkgName;
+    data[event.payload.chainId] = event.payload.pkgName;
     return data;
   });
 
   // maintain list of newest n verifiers
-  // TODO make a new file `latest-queue/${chain.chain.id}-${event.payload.contact}.json` that is then aggregated by a separate service every minute into latest.json so that multiple verifications can occur simultaneously
+  // TODO make a new file `latest-queue/${event.payload.chainId}-${event.payload.contact}.json` that is then aggregated by a separate service every minute into latest.json so that multiple verifications can occur simultaneously
   await transformS3Json(process.env.ASSOC_BUCKET, `latest.json`, data => {
     if(!('list' in data)) {
       data.list = [];
     }
     data.list.push({
-      chain: chain.chain.id,
+      chain: event.payload.chainId,
       address: event.payload.contract,
       pkgName: event.payload.pkgName,
       createdAt: Math.floor(Date.now() / 1000),
@@ -86,37 +83,6 @@ async function compiledSource(pkgName) {
 async function pkgInfoJson(pkgName) {
   const resp = await fetch(process.env.BLOB_URL + 'build/' + pkgName + '/info.json');
   return resp.text();
-}
-
-async function etherscanSource(chain, address) {
-  const resp = await fetch(
-    chain.apiUrl +
-    '?module=contract' +
-    '&action=getsourcecode' +
-    '&address=' + address +
-    '&apikey=' + chain.apiKey
-  );
-  const data = await resp.json();
-  if(!data.result[0].SourceCode) return null;
-
-  let sources;
-  let code = data.result[0].SourceCode;
-  // Some Etherscans have double curlies, some don't?
-  if(code.indexOf('{{') === 0) {
-    code = code.slice(1, -1);
-  }
-  if(code.indexOf('{') === 0) {
-    // Etherscan provided an object with multiple solidity sources
-    const inner = JSON.parse(code);
-    sources = Object.keys(inner.sources).reduce((out, file) => {
-      out[file] = inner.sources[file].content;
-      return out;
-    }, {});
-  } else {
-    // Some Etherscans send just a string if it's one file
-    sources = { 'verifier.sol': code };
-  }
-  return sources;
 }
 
 function acceptableDiff(sourceA, sourceB) {
