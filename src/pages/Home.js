@@ -15,9 +15,7 @@ export function Home() {
       <p className="py-3">
         Like verifying a contract on the block explorer, verify your Circom circuits on the circuit explorer.
         <br /><br />
-        Supports all chains with Etherscan (or equivalent):
-        <br />
-        Mainnet, Optimism, Polygon, Fantom, Arbitrum, Arbitrum Nova, Gnosis, Celo, Base, Sepolia, and Holesky.
+        Supports all EVM chains.
         <br /><br />
         Use the CLI to verify or deploy your circuit verifiers.
       </p>
