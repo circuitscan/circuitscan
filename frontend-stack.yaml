@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an S3 bucket with full public access and website hosting, along with a second bucket that redirects to the first bucket
+
+Parameters:
+  BucketName:
+    Description: Name of the primary S3 bucket
+    Type: String
+    Default: circuitscan.org
+
+Resources:
+  PrimaryS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+
+  PrimaryBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref PrimaryS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+            Resource:
+              - !Sub 'arn:aws:s3:::${BucketName}/*'
+
+  RedirectS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'www.${BucketName}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Ref BucketName
+          Protocol: http
+
+  RedirectBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref RedirectS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+            Resource:
+              - !Sub 'arn:aws:s3:::www.${BucketName}/*'
+
+Outputs:
+  PrimaryWebsiteURL:
+    Description: URL of the primary S3 bucket website endpoint
+    Value: !GetAtt
+      - PrimaryS3Bucket
+      - WebsiteURL
+
+  RedirectWebsiteURL:
+    Description: URL of the redirect S3 bucket website endpoint
+    Value: !GetAtt
+      - RedirectS3Bucket
+      - WebsiteURL
+
