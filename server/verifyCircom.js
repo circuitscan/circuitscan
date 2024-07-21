@@ -15,7 +15,7 @@ export async function verifyCircom(event) {
   if(!event.payload.pkgName)
     throw new Error('missing_pkgName');
 
-  // Load etherscan verified contract
+  // Load etherscan/sourcify verified contract
   const verified = await verifiedSource(event.payload.contract, event.payload.chainId);
   if(!verified)
     throw new Error('contract_not_verified');

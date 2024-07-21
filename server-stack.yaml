@@ -13,7 +13,7 @@ Parameters:
   AssocBucket:
     Type: String
     Description: S3 Bucket in which to store package/address associations
-    Default: blob.circuitscan.org
+    Default: circuitscan-artifacts
   MaxNewest:
     Type: String
     Description: Maximum number of verifiers to keep in latest.json
@@ -21,34 +21,7 @@ Parameters:
   BlobUrl:
     Type: String
     Description: Where compilation artifacts are stored
-    Default: https://blob.circuitscan.org/
-  EtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  OptimismEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  PolygonEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  FantomEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  ArbitrumEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  ArbitrumNovaEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  GnosisEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  CeloEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
-  BaseEtherscanApiKey:
-    Type: String
-    Description: For fetching solidity source
+    Default: https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/
 
 Resources:
   LambdaExecutionRole:
@@ -91,21 +64,11 @@ Resources:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
       MemorySize: 256
       Timeout: 30
-      ReservedConcurrentExecutions: 1 # For association, newest feed appends
       Environment:
         Variables:
           ASSOC_BUCKET: !Ref AssocBucket
           MAX_NEWEST: !Ref MaxNewest
           BLOB_URL: !Ref BlobUrl
-          ETHERSCAN_API_KEY: !Ref EtherscanApiKey
-          OPTIMISM_ETHERSCAN_API_KEY: !Ref OptimismEtherscanApiKey
-          POLYGON_ETHERSCAN_API_KEY: !Ref PolygonEtherscanApiKey
-          FANTOM_ETHERSCAN_API_KEY: !Ref FantomEtherscanApiKey
-          ARBITRUM_ETHERSCAN_API_KEY: !Ref ArbitrumEtherscanApiKey
-          ARBITRUM_NOVA_ETHERSCAN_API_KEY: !Ref ArbitrumNovaEtherscanApiKey
-          GNOSIS_ETHERSCAN_API_KEY: !Ref GnosisEtherscanApiKey
-          CELO_ETHERSCAN_API_KEY: !Ref CeloEtherscanApiKey
-          BASE_ETHERSCAN_API_KEY: !Ref BaseEtherscanApiKey
 
   LambdaFunctionUrl:
     Type: AWS::Lambda::Url
