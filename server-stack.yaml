@@ -64,6 +64,7 @@ Resources:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
       MemorySize: 256
       Timeout: 30
+      ReservedConcurrentExecutions: 1 # For association, newest feed appends
       Environment:
         Variables:
           ASSOC_BUCKET: !Ref AssocBucket
