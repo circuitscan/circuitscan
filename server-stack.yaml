@@ -92,6 +92,94 @@ Resources:
       Principal: "*"
       FunctionUrlAuthType: NONE
 
+  NewestAggregateLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ECRRepoName}-newest-aggregate-lambda-function"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 192
+      Timeout: 30
+      Handler: 'index.handler'
+      Runtime: 'nodejs20.x'
+      Environment:
+        Variables:
+          ASSOC_BUCKET: !Ref AssocBucket
+          MAX_NEWEST: !Ref MaxNewest
+          BLOB_URL: !Ref BlobUrl
+      Code:
+        ZipFile: |
+          const {
+            S3Client,
+            PutObjectCommand,
+            ListObjectsV2Command,
+            DeleteObjectsCommand,
+          } = require('@aws-sdk/client-s3');
+
+          const s3Client = new S3Client({ region: process.env.AWS_REGION });
+          exports.handler = async (event) => {
+            const result = await fetch(process.env.BLOB_URL + 'latest.json');
+            const data = await result.json();
+
+            const queue = await s3Client.send(new ListObjectsV2Command({
+              Bucket: process.env.ASSOC_BUCKET,
+              Prefix: 'latest-queue/',
+            }));
+            if(!queue.KeyCount) return {
+              statusCode: 200,
+              body: JSON.stringify({
+                status: 'no-change',
+              }),
+            };
+
+            const newItems = await Promise.all(queue.Contents.map(item =>
+              fetch(process.env.BLOB_URL + item.Key).then(result => result.json())));
+
+            const newList = [...newItems, ...data.list]
+              .sort((a, b) => a.createdAt - b.createdAt)
+              .slice(-parseInt(process.env.MAX_NEWEST, 10));
+
+            await s3Client.send(new PutObjectCommand({
+              Bucket: process.env.ASSOC_BUCKET,
+              Key:`latest.json`,
+              ContentType: 'application/json',
+              Body: JSON.stringify({
+                list: newList,
+              }),
+            }));
+
+            await s3Client.send(new DeleteObjectsCommand({
+              Bucket: process.env.ASSOC_BUCKET,
+              Delete: {
+                Objects: queue.Contents.map(item => ({ Key: item.Key })),
+              },
+            }));
+
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                status: 'ok',
+              }),
+            };
+          };
+
+  NewestAggregateLambdaFunctionSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: 'rate(1 minute)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt NewestAggregateLambdaFunction.Arn
+          Id: "NewestAggregateLambdaFunctionTarget"
+      Name: NewestAggregateLambdaFunctionSchedule
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NewestAggregateLambdaFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt NewestAggregateLambdaFunctionSchedule.Arn
+
 Outputs:
   LambdaFunctionUrl:
     Description: The URL of the Lambda function

@@ -1,11 +1,14 @@
 import {diffTrimmedLines} from 'diff';
 import verifiedSource from 'verified-solidity-source';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import {transformS3Json} from './utils.js';
 
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;
+
+const s3Client = new S3Client();
 
 export async function verifyCircom(event) {
   if(isNaN(event.payload.chainId))
@@ -49,23 +52,19 @@ export async function verifyCircom(event) {
   });
 
   // maintain list of newest n verifiers
-  // TODO make a new file `latest-queue/${event.payload.chainId}-${event.payload.contact}.json` that is then aggregated by a separate service every minute into latest.json so that multiple verifications can occur simultaneously
-  await transformS3Json(process.env.ASSOC_BUCKET, `latest.json`, data => {
-    if(!('list' in data)) {
-      data.list = [];
-    }
-    data.list.push({
+  // make a new file that is then aggregated by a separate lambda on a timer
+  // into latest.json so that multiple verifications can occur simultaneously
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.ASSOC_BUCKET,
+    Key:`latest-queue/${event.payload.chainId}-${event.payload.contract}.json`,
+    ContentType: 'application/json',
+    Body: JSON.stringify({
       chain: event.payload.chainId,
       address: event.payload.contract,
       pkgName: event.payload.pkgName,
       createdAt: Math.floor(Date.now() / 1000),
-    });
-
-    if(data.list.length >= parseInt(process.env.MAX_NEWEST, 10)) {
-      data.list.shift();
-    }
-    return data;
-  });
+    }),
+  }));
 
   return {
     statusCode: 200,
