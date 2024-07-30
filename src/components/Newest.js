@@ -16,7 +16,7 @@ export default function Newest() {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        const result = await fetch(import.meta.env.VITE_LATEST_URL);
+        const result = await fetch(import.meta.env.VITE_BLOB_URL + 'latest.json');
         const data = await result.json();
         setList(data.list.reverse());
       } catch (err) {
