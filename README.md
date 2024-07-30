@@ -39,14 +39,8 @@ Optionally, you can also develop the server locally.
 > Requires Docker
 
 ```
-# Configure Etherscan, Postgres,
-# AWS access keys, blob settings for solidity source cache
-# and change VITE_API_URL to `/api`
-# to use the local running docker container through vite proxy
+# Configure S3 settings for local server
 $ vim .env
-
-# Init database (modify command with your connection settings)
-$ psql < migrations/000-init.sql
 
 # Build server lambda docker image
 $ yarn build:server
