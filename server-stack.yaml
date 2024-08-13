@@ -57,7 +57,7 @@ Resources:
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${ECRRepoName}-lambda-function"
+      FunctionName: !Sub "${AWS::StackName}-lambda-function"
       Role: !GetAtt LambdaExecutionRole.Arn
       PackageType: Image
       Code:
@@ -95,7 +95,7 @@ Resources:
   NewestAggregateLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${ECRRepoName}-newest-aggregate-lambda-function"
+      FunctionName: !Sub "${AWS::StackName}-newest-aggregate-lambda-function"
       Role: !GetAtt LambdaExecutionRole.Arn
       MemorySize: 192
       Timeout: 30
