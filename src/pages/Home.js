@@ -6,6 +6,7 @@ import {
   MapIcon,
   SpeakerWaveIcon,
   UserGroupIcon,
+  KeyIcon,
 } from '@heroicons/react/24/solid';
 
 import Card from '../components/Card.js';
@@ -54,6 +55,12 @@ export function Home() {
             Roadmap
           </button>
         </a>
+        <Link to="/manage-api-key">
+          <button className={clsButton}>
+            <KeyIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
+            API Key
+          </button>
+        </Link>
       </p>
     </Card>
     <Card>

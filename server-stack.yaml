@@ -22,8 +22,20 @@ Parameters:
     Type: String
     Description: Where compilation artifacts are stored
     Default: https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/
+  APIKeyBucketName:
+    Description: Name of the S3 bucket
+    Type: String
+    Default: circuitscan-apikeys
+  RecaptchaSecretKey:
+    Description: Value provided by Google Recaptcha admin console (for api key creation)
+    Type: String
 
 Resources:
+  APIKeyS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref APIKeyBucketName
+
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -51,6 +63,8 @@ Resources:
                 Action:
                   - "s3:*"
                 Resource:
+                  - !Sub arn:aws:s3:::${APIKeyBucketName}/*
+                  - !Sub arn:aws:s3:::${APIKeyBucketName}
                   - !Sub arn:aws:s3:::${AssocBucket}/*
                   - !Sub arn:aws:s3:::${AssocBucket}
 
@@ -64,12 +78,13 @@ Resources:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
       MemorySize: 256
       Timeout: 30
-      ReservedConcurrentExecutions: 1 # For association, newest feed appends
       Environment:
         Variables:
           ASSOC_BUCKET: !Ref AssocBucket
           MAX_NEWEST: !Ref MaxNewest
           BLOB_URL: !Ref BlobUrl
+          APIKEY_BUCKET: !Ref APIKeyBucketName
+          RECAPTCHA_SECRET_KEY: !Ref RecaptchaSecretKey
 
   LambdaFunctionUrl:
     Type: AWS::Lambda::Url
