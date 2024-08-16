@@ -37,7 +37,7 @@ export async function listApiKey(body) {
 export async function removeApiKey(body) {
   await verifySignature(body, 'Remove API Key: ' + body.keyToRemove);
 
-  let output;
+  let output, fullKey;
   await transformS3Json(process.env.APIKEY_BUCKET, `keys/${body.address}.json`, data => {
     if(!('nonces' in data))
       data.nonces = [];
@@ -51,15 +51,22 @@ export async function removeApiKey(body) {
     for(let i = 0; i<data.keys.length; i++) {
       // XXX: Could potentially remove all keys with a zero-length keyToRemove
       if(data.keys[i].secret.endsWith(body.keyToRemove.slice(-CENSOR_LEN))) {
+        fullKey = data.keys[i].secret;
         data.keys[i].inactive = true;
       }
     }
 
+    if(!fullKey) throw new Error('invalid_key_to_remove');
     output = data.keys.filter(item => !item.inactive).map(item => ({
       ...item,
       secret: censorApiKey(item.secret),
     }));
 
+    return data;
+  });
+
+  await transformS3Json(process.env.APIKEY_BUCKET, `uses/${fullKey}.json`, data => {
+    data.inactive = true;
     return data;
   });
 
@@ -111,6 +118,10 @@ export async function generateApiKey(body) {
   }
 
   let output;
+  const newKey = {
+    created: Date.now(),
+    secret: randomBytes(16).toString('hex'),
+  };
   await transformS3Json(process.env.APIKEY_BUCKET, `keys/${body.address}.json`, data => {
     if(!('nonces' in data))
       data.nonces = [];
@@ -126,13 +137,20 @@ export async function generateApiKey(body) {
       secret: censorApiKey(item.secret),
     }));
 
-    const newKey = {
-      created: Date.now(),
-      secret: randomBytes(16).toString('hex'),
-    };
     data.keys.push(newKey);
     output.push(newKey);
 
+    return data;
+  });
+
+  await transformS3Json(process.env.APIKEY_BUCKET, `uses/${newKey.secret}.json`, data => {
+    if('address' in data)
+      throw new Error('duplicate_key');
+    if(data.inactive)
+      throw new Error('inactive_key');
+
+    data.address = body.address;
+    data.requests = [];
     return data;
   });
 
