@@ -23,7 +23,7 @@ import {
   loadListOrFile,
 } from '../utils.js';
 
-export function Address() {
+export default function Address() {
   const navigate = useNavigate();
   const {address, chain: chainParam} = useParams();
   const isValid = isAddress(address);

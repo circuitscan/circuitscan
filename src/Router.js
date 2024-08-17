@@ -3,7 +3,6 @@ import { createBrowserRouter, RouterProvider, Navigate, useParams } from "react-
 import { Layout } from './components/Layout.js';
 import Card from './components/Card.js';
 import { Home } from './pages/Home.js';
-import { Address } from './pages/Address.js';
 
 export function Router() {
   const router = createBrowserRouter([
@@ -19,11 +18,11 @@ export function Router() {
             },
             {
               path: "address/:address",
-              element: <Address />,
+              element: <DynamicPageLoader pageName="Address" />,
             },
             {
               path: "chain/:chain/address/:address",
-              element: <Address />,
+              element: <DynamicPageLoader pageName="Address" />,
             },
             {
               path: "manage-api-key",
