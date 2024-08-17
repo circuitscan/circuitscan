@@ -21,7 +21,7 @@ export function BuildStatus({ requestId }) {
         const convert = new Convert();
         setData({
           shell: convert.toHtml(data
-            .filter(x => x.msg === 'Circomkit Log')
+            .filter(x => x.msg.startsWith('Circomkit'))
             .map(x => x.data.msg)
             .join('\n\n')),
           duration: data[data.length - 1].time.toFixed(2),
