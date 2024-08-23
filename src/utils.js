@@ -169,6 +169,12 @@ export function extractCircomTemplate(sourceCode, templateName) {
     };
 }
 
+export async function p0tionDetails(finalZkeyUrl) {
+  const response = await fetch(`${import.meta.env.VITE_BLOB_URL}p0tion.json`);
+  const data = await response.json();
+  return data.zkeys[finalZkeyUrl];
+}
+
 export async function fetchInfo(pkgName) {
   if(pkgName in infoCache) return infoCache[pkgName];
   const response = await fetch(`${import.meta.env.VITE_BLOB_URL}build/${pkgName}/info.json`);

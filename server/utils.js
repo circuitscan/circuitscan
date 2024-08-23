@@ -27,7 +27,7 @@ export async function transformS3Json(bucketName, key, transformCallback) {
   }
 
   // Transform the data using the provided callback
-  const transformedData = transformCallback(jsonData);
+  const transformedData = await transformCallback(jsonData);
 
   // Convert the transformed data back to JSON string
   const transformedJsonString = JSON.stringify(transformedData);

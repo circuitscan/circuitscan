@@ -12,7 +12,7 @@ Parameters:
     Default: latest
   AssocBucket:
     Type: String
-    Description: S3 Bucket in which to store package/address associations
+    Description: Public S3 Bucket in which to store package/address associations (Must already have been created using artifact-stack.yaml)
     Default: circuitscan-artifacts
   MaxNewest:
     Type: String
@@ -23,12 +23,40 @@ Parameters:
     Description: Where compilation artifacts are stored
     Default: https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/
   APIKeyBucketName:
-    Description: Name of the S3 bucket
+    Description: Name of the new private S3 bucket (Will be created)
     Type: String
     Default: circuitscan-apikeys
   RecaptchaSecretKey:
     Description: Value provided by Google Recaptcha admin console (for api key creation)
     Type: String
+  P0tionAwsRegion:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: eu-central-1
+  P0tionBucketPostfix:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: -pse-p0tion-production
+  P0tionFirebaseApiKey:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: AIzaSyC_m2yETFfuJ_dO5mtQfyU6qlc8k3CTFUY
+  P0tionFirebaseAuthDomain:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: pse-p0tion-production.firebaseapp.com
+  P0tionFirebaseProjectId:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: pse-p0tion-production
+  P0tionFirebaseMessagingSenderId:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: "791425100143"
+  P0tionFirebaseAppId:
+    Description: From DefinitelySetup prod config
+    Type: String
+    Default: "1:791425100143:web:86313c4d311c8f6014a09a"
 
 Resources:
   APIKeyS3Bucket:
@@ -85,6 +113,13 @@ Resources:
           BLOB_URL: !Ref BlobUrl
           APIKEY_BUCKET: !Ref APIKeyBucketName
           RECAPTCHA_SECRET_KEY: !Ref RecaptchaSecretKey
+          P0TION_AWS_REGION: !Ref P0tionAwsRegion
+          P0TION_CONFIG_CEREMONY_BUCKET_POSTFIX: !Ref P0tionBucketPostfix
+          P0TION_FIREBASE_API_KEY: !Ref P0tionFirebaseApiKey
+          P0TION_FIREBASE_AUTH_DOMAIN: !Ref P0tionFirebaseAuthDomain
+          P0TION_FIREBASE_PROJECT_ID: !Ref P0tionFirebaseProjectId
+          P0TION_FIREBASE_MESSAGING_SENDER_ID: !Ref P0tionFirebaseMessagingSenderId
+          P0TION_FIREBASE_APP_ID: !Ref P0tionFirebaseAppId
 
   LambdaFunctionUrl:
     Type: AWS::Lambda::Url
@@ -106,6 +141,24 @@ Resources:
       FunctionName: !Ref LambdaFunction
       Principal: "*"
       FunctionUrlAuthType: NONE
+
+  LambdaFunctionSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: 'rate(60 minutes)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaFunction.Arn
+          Id: "LambdaFunctionTarget"
+      Name: LambdaFunctionSchedule
+
+  PermissionForEventsToInvokeMainLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt LambdaFunctionSchedule.Arn
 
   NewestAggregateLambdaFunction:
     Type: AWS::Lambda::Function

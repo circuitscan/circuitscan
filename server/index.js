@@ -1,7 +1,14 @@
 import {verifyCircom} from './verifyCircom.js';
 import {generateApiKey, removeApiKey, listApiKey} from './apiKeys.js';
+import {updateP0tion} from './p0tion.js';
 
 export async function handler(event) {
+  // Triggered by timer
+  if(event.source === 'aws.events') {
+    await updateP0tion();
+    return;
+  }
+
   if('body' in event) {
     // Running on AWS
     event = JSON.parse(event.body);

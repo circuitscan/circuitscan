@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
+import {
+  CheckIcon,
+  ClockIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 
 import {
   joinPaths,
   getImports,
   extractCircomTemplate,
   loadListOrFile,
+  p0tionDetails,
 } from '../utils.js';
 
 import Card from './Card.js';
@@ -35,9 +41,9 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
           }
         }
         setData(template);
-      } catch (err) {
+      } catch (error) {
         console.error(error);
-        setError(err);
+        setError(error);
       } finally {
         setLoading(false);
       }
@@ -57,7 +63,10 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
             <dt className="text-l font-bold">Compiler</dt>
             <dd className="pl-6">{info.circomPath}</dd>
             <dt className="text-l font-bold">Protocol</dt>
-            <dd className="pl-6">{info.protocol}</dd>
+            <dd className="pl-6 flex items-center">
+              <span>{info.protocol}</span>
+              {info.protocol === 'groth16' && <ZkeyStatus finalZKey={info.finalZKey} />}
+            </dd>
             <dt className="text-l font-bold">SnarkJS Version</dt>
             <dd className="pl-6">{info.snarkjsVersion}</dd>
             <dt className="text-l font-bold">Template</dt>
@@ -98,4 +107,67 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
       }} />
     </div>}
   </>);
+}
+
+function ZkeyStatus({ finalZKey }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAsyncData = async () => {
+      try {
+        setData(await p0tionDetails(finalZKey));
+      } catch (error) {
+        console.error(error);
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAsyncData();
+  }, []);
+
+  if(loading) return <div className={`
+      flex pl-2 pr-3 py-1 ml-2
+      border rounded-full bg-neutral-200 dark:bg-neutral-900
+      border-neutral-400 dark:border-neutral-600
+      text-sm
+    `}>
+      <ClockIcon className="h-5 w-5 text-blue-500" />
+      Loading Second Phase Setup...
+    </div>;
+  if(error) return <div className={`
+      flex pl-2 pr-3 py-1 ml-2
+      border rounded-full bg-neutral-200 dark:bg-neutral-900
+      border-neutral-400 dark:border-neutral-600
+      text-sm
+    `}>
+      <XMarkIcon className="h-5 w-5 text-red-500" />
+      Error Loading Second Phase Setup
+    </div>;
+  if(!data) return <div className={`
+      flex pl-2 pr-3 py-1 ml-2
+      border rounded-full bg-neutral-200 dark:bg-neutral-900
+      border-neutral-400 dark:border-neutral-600
+      text-sm
+    `}>
+      <XMarkIcon className="h-5 w-5 text-red-500" />
+      Unknown Second Phase Setup
+    </div>;
+  return <a
+    href={`https://ceremony.pse.dev/projects/${data}`}
+    target="_blank"
+    rel="noopener"
+    className={`
+      flex pl-2 pr-3 py-1 ml-2
+      border rounded-full bg-neutral-200 dark:bg-neutral-900
+      border-neutral-400 dark:border-neutral-600
+      text-sm
+    `}
+   >
+     <CheckIcon className="h-5 w-5 text-green-500" />
+     Trusted Setup Verified
+   </a>;
 }
