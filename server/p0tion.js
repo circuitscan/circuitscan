@@ -24,6 +24,7 @@ export async function updateP0tion() {
   const db = getFirestore(app);
 
   let terminatePromise;
+  // TODO store urls and setups in separate files in order to reduce client data transfer
   await transformS3Json(process.env.ASSOC_BUCKET, `p0tion.json`, async (data) => {
     // Initialize new file if necessary
     data.ceremonies = data.cermonies || [];

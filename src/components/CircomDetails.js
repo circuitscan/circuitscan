@@ -126,16 +126,25 @@ function ZkeyStatus({ finalZKey }) {
       }
     };
 
-    loadAsyncData();
+    (typeof finalZKey === 'string') && finalZKey.startsWith('https://') && loadAsyncData();
   }, []);
 
+  if(!finalZKey) return <div className={`
+      flex pl-2 pr-3 py-1 ml-2
+      border rounded-full bg-neutral-200 dark:bg-neutral-900
+      border-neutral-400 dark:border-neutral-600
+      text-sm
+    `}>
+      <CheckIcon className="h-5 w-5 text-gray-500" />&nbsp;
+      Circuitscan Random Entropy Setup
+    </div>;
   if(loading) return <div className={`
       flex pl-2 pr-3 py-1 ml-2
       border rounded-full bg-neutral-200 dark:bg-neutral-900
       border-neutral-400 dark:border-neutral-600
       text-sm
     `}>
-      <ClockIcon className="h-5 w-5 text-blue-500" />
+      <ClockIcon className="h-5 w-5 text-blue-500" />&nbsp;
       Loading Second Phase Setup...
     </div>;
   if(error) return <div className={`
@@ -144,7 +153,7 @@ function ZkeyStatus({ finalZKey }) {
       border-neutral-400 dark:border-neutral-600
       text-sm
     `}>
-      <XMarkIcon className="h-5 w-5 text-red-500" />
+      <XMarkIcon className="h-5 w-5 text-red-500" />&nbsp;
       Error Loading Second Phase Setup
     </div>;
   if(!data) return <div className={`
@@ -153,13 +162,14 @@ function ZkeyStatus({ finalZKey }) {
       border-neutral-400 dark:border-neutral-600
       text-sm
     `}>
-      <XMarkIcon className="h-5 w-5 text-red-500" />
+      <XMarkIcon className="h-5 w-5 text-red-500" />&nbsp;
       Unknown Second Phase Setup
     </div>;
   return <a
     href={`https://ceremony.pse.dev/projects/${data}`}
     target="_blank"
     rel="noopener"
+    title="View Trusted Setup Details..."
     className={`
       flex pl-2 pr-3 py-1 ml-2
       border rounded-full bg-neutral-200 dark:bg-neutral-900
@@ -167,7 +177,7 @@ function ZkeyStatus({ finalZKey }) {
       text-sm
     `}
    >
-     <CheckIcon className="h-5 w-5 text-green-500" />
+     <CheckIcon className="h-5 w-5 text-green-500" />&nbsp;
      Trusted Setup Verified
    </a>;
 }
