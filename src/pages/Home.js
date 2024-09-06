@@ -78,14 +78,32 @@ export function Home() {
               py-3 flex items-center justify-between
               ${clsIconA}
             `}
-            to={`/chain/11155111/address/0x1a3bef8ae9968abfd31c5a026ebee48d741e7dca`}
+            to={`/chain/11155111/address/0x84ac07EfC0c7093416aCd6189a600AD479CFA045`}
           >
             <span className={`
               text-ellipsis inline-block overflow-hidden
               mr-1 grow
             `}>
               <span className="font-bold">
-                Example compilation of zkP2P Venmo Send verifier at full size
+                ZKP2P VenmoSendProcessor Sepolia deployment
+              </span>
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link
+            className={`
+              py-3 flex items-center justify-between
+              ${clsIconA}
+            `}
+            to={`/chain/11155111/address/0x72687fAbC8F025233C6aA5c2a9Cf092365ed741D`}
+          >
+            <span className={`
+              text-ellipsis inline-block overflow-hidden
+              mr-1 grow
+            `}>
+              <span className="font-bold">
+                Anon Aadhaar Sepolia deployment
               </span>
             </span>
           </Link>
