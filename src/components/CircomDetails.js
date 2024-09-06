@@ -52,6 +52,7 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
     loadAsyncData();
   }, []);
 
+  // TODO display optimization level
   return (<>
     {loading && <Card>Loading circuit details...</Card>}
     {error && <Card>Error loading circuit details!</Card>}

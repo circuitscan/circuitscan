@@ -116,11 +116,9 @@ function acceptableDiff(sourceA, sourceB) {
       lastRemoved = null;
       // Allow only whitespace differences
       if(diff[i-1].value.trim() !== diff[i].value.trim()
-        // TODO allow for contract name changes?
+        // allow for contract name changes?
         && !(diff[i-1].value.match(CONTRACT_DEF_REGEX)
           && diff[i].value.match(CONTRACT_DEF_REGEX))
-//         && !(diff[i-1].value.match(GROTH16_ENTROPY_REGEX)
-//           && diff[i].value.match(GROTH16_ENTROPY_REGEX))
       ) {
         console.log('invalid_change', i);
         return false;
