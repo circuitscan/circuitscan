@@ -3,5 +3,6 @@
   "lambdaCompilerURL": "https://zdu4l4qdtornv6svftwwpzjxgu0rsbwc.lambda-url.us-west-2.on.aws/",
   "ec2CompilerURL": "https://h5wb4nrdnpmtsec6qrbdpomxfm0cnigs.lambda-url.us-west-2.on.aws/",
   "blobUrl": "https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/",
+  "browserWalletURL": "https://circuitscan.org/deploy-verifier",
   "defaultCircomPath": "circom-v2.1.8"
 }

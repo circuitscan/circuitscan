@@ -25,6 +25,10 @@ export function Router() {
               element: <DynamicPageLoader pageName="Address" />,
             },
             {
+              path: "deploy-verifier/:reference",
+              element: <DynamicPageLoader pageName="DeployVerifier" />,
+            },
+            {
               path: "manage-api-key",
               element: <DynamicPageLoader pageName="ApiKey" />,
             },
@@ -67,7 +71,7 @@ function DynamicPageLoader({ pageName }) {
     loadAsyncData();
   }, []);
 
-  if(loading) return <Card>Loading...</Card>;
+  if(loading) return <Card><p className="text-center my-8">Loading...</p></Card>;
   if(error) return <Card>Error loading page!</Card>;
   return <page.default />;
 };

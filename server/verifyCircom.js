@@ -4,6 +4,9 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import {transformS3Json} from './utils.js';
 
+// TODO allow pragma solidity difference
+// TODO allow comment differences
+// TODO allow multi-verifiers
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+ {\n$/;
 const GROTH16_ENTROPY_REGEX = /^uint256 constant deltax1 = \d+;\nuint256 constant deltax2 = \d+;\nuint256 constant deltay1 = \d+;\nuint256 constant deltay2 = \d+;\n$/;

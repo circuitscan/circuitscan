@@ -10,7 +10,7 @@
     "build:frontend": "vite build",
     "build:server": "docker build -t circuitscan_server server/",
     "dev:server": "docker run -p 9000:8080 --env-file ./.env --rm circuitscan_server",
-    "deploy:server": "aws ecr get-login-password --profile cs --region us-west-2 | docker login --username AWS --password-stdin 654654229232.dkr.ecr.us-west-2.amazonaws.com && docker tag circuitscan_server:latest 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_server:latest && docker push 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_server:latest",
+    "deploy:server": "aws ecr get-login-password --profile cs --region us-west-2 | docker login --username AWS --password-stdin 654654229232.dkr.ecr.us-west-2.amazonaws.com && docker tag circuitscan_server:latest 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_main:latest && docker push 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_main:latest",
     "deploy:frontend": "rm -rf dist/ && vite build && aws s3 rm --profile cs s3://circuitscan.org/ --recursive && aws s3 sync --profile cs dist/ s3://circuitscan.org/"
   },
   "dependencies": {

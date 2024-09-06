@@ -1,5 +1,6 @@
 import {verifyCircom} from './verifyCircom.js';
 import {generateApiKey, removeApiKey, listApiKey} from './apiKeys.js';
+import {storeSolcOutput, storeDeployedAddress} from './browserDeploy.js';
 import {updateP0tion} from './p0tion.js';
 
 export async function handler(event) {
@@ -23,6 +24,10 @@ export async function handler(event) {
         return await removeApiKey(event);
       case 'generateApiKey':
         return await generateApiKey(event);
+      case 'storeSolcOutput':
+        return await storeSolcOutput(event);
+      case 'storeDeployedAddress':
+        return await storeDeployedAddress(event);
       default:
         throw new Error('invalid_command');
     }
