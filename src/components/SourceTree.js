@@ -73,6 +73,6 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     </a>
     {loadingFile ? <CodeBlock code="Loading..." />
       : fileError ? <CodeBlock code="Error loading source!" />
-      : <CodeBlock code={source} language="circom" />}
+      : <CodeBlock code={source} language="javascript" />}
   </Card>;
 }

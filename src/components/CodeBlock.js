@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-solidity';
+import prismLineNumbers from '../utils/prism-line-numbers.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 
 const CodeBlock = ({ code, language }) => {
   useEffect(() => {
+    prismLineNumbers(Prism);
     Prism.highlightAll();
   }, [code, language]);
 
