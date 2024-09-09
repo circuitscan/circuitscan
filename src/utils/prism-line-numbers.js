@@ -1,3 +1,4 @@
+// Modified from the vendor version to support import syntax
 export default function (Prism) {
 
 	if (typeof Prism === 'undefined' || typeof document === 'undefined') {

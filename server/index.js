@@ -1,6 +1,7 @@
 import {verifyCircom} from './verifyCircom.js';
 import {generateApiKey, removeApiKey, listApiKey} from './apiKeys.js';
 import {storeSolcOutput, storeDeployedAddress} from './browserDeploy.js';
+import {storeGithubHash} from './githubLink.js';
 import {updateP0tion} from './p0tion.js';
 
 export async function handler(event) {
@@ -28,6 +29,8 @@ export async function handler(event) {
         return await storeSolcOutput(event);
       case 'storeDeployedAddress':
         return await storeDeployedAddress(event);
+      case 'storeGithubHash':
+        return await storeGithubHash(event);
       default:
         throw new Error('invalid_command');
     }

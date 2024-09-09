@@ -5,6 +5,14 @@ import S3RangeZip from 's3-range-zip';
 const blobCache = {};
 const infoCache = {};
 
+export async function generateSHA256Hash(message) {
+  const msgUint8 = new TextEncoder().encode(message); // encode the message as a UTF-8 array
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+  return hashHex;
+}
+
 export function findChain(chainId) {
   for(let chain of Object.keys(chains)) {
     if(Number(chainId) === chains[chain].id) return chains[chain];
