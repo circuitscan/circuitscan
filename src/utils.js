@@ -260,7 +260,7 @@ function evaluateExpression(expression, variables) {
             values.push(parseInt(token, 10));
         } else if (token in variables) {
             // Replace token with corresponding variable value
-            values.push(variables[token]);
+            values.push(evaluateExpression(variables[token], {}));
         } else if (token in ops) {
             // Apply all operators with higher or equal precedence
             while (operators.length !== 0 && precedence[operators[operators.length - 1]] >= precedence[token]) {
