@@ -46,7 +46,6 @@ function GithubLink({ code }) {
         const data = await result.json();
         setData(data);
       } catch (err) {
-        console.error(err);
         setError(err);
       } finally {
         setLoading(false);
@@ -71,6 +70,7 @@ function GithubLink({ code }) {
     <div>Github match{data.links.length > 1 ? 'es' : ''}:
       {data.links.map(link => <a
           href={link}
+          key={link}
           className={`${clsIconA} text-nowrap ${data.links.length > 1 ? 'block' : 'inline-block'} px-2`}
           target="_blank"
           rel="noopener"
@@ -146,11 +146,10 @@ function SubmitGithubLink({ hash, code, setReloadCount }) {
   }
 
   return (<>
-    <a
-      href="#"
+    <button
       className={`${clsIconA} text-sm text-nowrap inline-block px-2`}
       onClick={toggleForm}
-    >Submit link...</a>
+    >Submit link...</button>
     <dialog open={showForm} className={`
       z-50 left-5
       mx-3 -mt-5 px-6 pt-6 pb-2 border rounded-md
@@ -159,7 +158,7 @@ function SubmitGithubLink({ hash, code, setReloadCount }) {
       shadow-xl shadow-neutral-200 dark:shadow-neutral-700
     `}>
       <form onSubmit={submitForm} className="inline">
-        <p>Github source blob URL at a specific commit hash:</p>
+        <p className="dark:text-slate-200">Github source blob URL at a specific commit hash:</p>
         <input
           placeholder="https://github.com/username/repository/blob/abcdefabcdefabcdefabcdefabcdefabcdefabcd/src/circuit.circom"
           className={`${clsInput} mt-1 mb-4`}

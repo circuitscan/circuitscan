@@ -4,7 +4,8 @@ import {diffTrimmedLines} from 'diff';
 
 import {transformS3Json} from './utils.js';
 
-const INCLUDE_REGEX = /^include "[^"]+";\n$/gm
+const INCLUDE_REGEX = /^include "[^"]+";\n$/gm;
+const MAIN_COMPONENT_REGEX = /component\s+main\s*(\{\s*public\s*\[\s*([^\]]*)\s*\]\s*\})?\s*=\s*([a-zA-Z0-9_]+)\(([^)]*)\);/;
 
 export async function storeGithubHash(body) {
   const rawUrl = transformGithubUrlToRaw(body.payload.url);
@@ -65,11 +66,15 @@ function acceptableDiff(sourceA, sourceB) {
       return false;
     } else if(lastRemoved === i - 1 && diff[i].added) {
       lastRemoved = null;
+      const mainCompMatch = diff[i-1].value.match(MAIN_COMPONENT_REGEX);
       // Allow only whitespace differences
       if(diff[i-1].value.trim() !== diff[i].value.trim()
-        // allow for contract name changes?
         && !(diff[i-1].value.match(INCLUDE_REGEX)
+        // Allow includes to be different paths (circuitscan rewrites the paths)
           && diff[i].value.match(INCLUDE_REGEX))
+        // Allow the main component to be missing
+        && !(mainCompMatch
+          && diff[i-1].value.replace(mainCompMatch[0], '').trim() === diff[i].value.trim())
       ) {
         console.log('invalid_change', i);
         return false;
@@ -80,6 +85,11 @@ function acceptableDiff(sourceA, sourceB) {
     }
   }
   if(lastRemoved !== null) {
+    const mainCompMatch = diff[lastRemoved].value.match(MAIN_COMPONENT_REGEX);
+    if(mainCompMatch && diff[lastRemoved].value.replaceAll(mainCompMatch[0], '').trim() === '') {
+      // The main component was removed at the end of the file
+      return true;
+    }
     console.log('invalid_unbalanced_removal', lastRemoved)
     return false;
   }
