@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Prism from 'prismjs';
 import { toast } from 'react-hot-toast';
 
 import prismLineNumbers from '../utils/prism-line-numbers.js';
 import {generateSHA256Hash} from '../utils.js';
-import {clsButton, clsInput, clsIconA} from './Layout.js';
+import {clsInput, clsIconA} from './Layout.js';
+import {PopupDialog} from './PopupDialog.js';
 
 const CodeBlock = ({ code, language }) => {
   useEffect(() => {
@@ -33,29 +34,30 @@ function GithubLink({ code }) {
   const [error, setError] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
 
-  useEffect(() => {
-    const loadAsyncData = async () => {
-      setLoading(true);
-      setData(null);
-      setHash(null);
-      setError(null);
-      try {
-        const hash = await generateSHA256Hash(code);
-        setHash(hash);
-        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}github-hash/${hash}.json`);
-        const data = await result.json();
-        setData(data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  async function reload(cache) {
+    setLoading(true);
+    if(!code || code === 'Loading...') return;
+    setData(null);
+    setHash(null);
+    setError(null);
+    try {
+      const hash = await generateSHA256Hash(code);
+      setHash(hash);
+      const result = await fetch(`${import.meta.env.VITE_BLOB_URL}github-hash/${hash}.json`, {cache});
+      const data = await result.json();
+      setData(data);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    code && code !== 'Loading...' && loadAsyncData();
-  }, [code, reloadCount]);
+  useEffect(() => { reload() }, [code]);
+  // Reloads after updates should break the cache
+  useEffect(() => { reload('reload') }, [reloadCount]);
 
-  if(loading || code === 'Loading...') return(<>
+  if(loading) return(<>
     <p>Loading Github sources...</p>
   </>);
 
@@ -97,21 +99,15 @@ function getGithubUrlDetails(url) {
 }
 
 function SubmitGithubLink({ hash, code, setReloadCount }) {
-  const [showForm, setShowForm] = useState(false);
   const [url, setUrl] = useState('');
+  const inputRef = useRef(null);
 
-  function toggleForm(event) {
-    event.preventDefault();
-    setShowForm(cur => !cur);
-  }
-
-  async function submitForm(event) {
-    event.preventDefault();
+  async function submitForm(event, hideForm) {
     if(!getGithubUrlDetails(url)) {
       toast.error('Invalid Github blob URL!');
       return;
     }
-    setShowForm(false);
+    hideForm();
     toast.loading('Submitting Github URL...');
     try {
       const result = await fetch(import.meta.env.VITE_SERVER_URL, {
@@ -133,9 +129,8 @@ function SubmitGithubLink({ hash, code, setReloadCount }) {
         toast.dismiss();
         toast.error(data.errorMessage || 'Not a match!');
         return;
-      } else {
-        setReloadCount(n => n + 1);
       }
+      setReloadCount(n => n + 1);
       toast.dismiss();
       toast.success('Successful Github source match!');
     } catch (err) {
@@ -145,36 +140,20 @@ function SubmitGithubLink({ hash, code, setReloadCount }) {
     }
   }
 
-  return (<>
-    <button
-      className={`${clsIconA} text-sm text-nowrap inline-block px-2`}
-      onClick={toggleForm}
-    >Submit link...</button>
-    <dialog open={showForm} className={`
-      z-50 left-5
-      mx-3 -mt-5 px-6 pt-6 pb-2 border rounded-md
-      bg-neutral-100 border-neutral-300
-      dark:bg-neutral-900 dark:border-neutral-600
-      shadow-xl shadow-neutral-200 dark:shadow-neutral-700
-    `}>
-      <form onSubmit={submitForm} className="inline">
-        <p className="dark:text-slate-200">Github source blob URL at a specific commit hash:</p>
-        <input
-          placeholder="https://github.com/username/repository/blob/abcdefabcdefabcdefabcdefabcdefabcdefabcd/src/circuit.circom"
-          className={`${clsInput} mt-1 mb-4`}
-          onChange={(e) => setUrl(e.target.value)}
-          value={url}
-        />
-        <button
-          type="submit"
-          className={`${clsButton}`}
-        >Submit</button>
-        <button
-          type="button"
-          className={`${clsButton}`}
-          onClick={toggleForm}
-        >Cancel</button>
-      </form>
-    </dialog>
-  </>);
+  return (
+    <PopupDialog
+      linkText="Submit link..."
+      onSubmit={submitForm}
+      {...{inputRef}}
+    >
+      <p className="dark:text-slate-200">Github source blob URL at a specific commit hash:</p>
+      <input
+        placeholder="https://github.com/username/repository/blob/abcdefabcdefabcdefabcdefabcdefabcdefabcd/src/circuit.circom"
+        className={`${clsInput} mt-1 mb-4`}
+        onChange={(e) => setUrl(e.target.value)}
+        value={url}
+        ref={inputRef}
+      />
+    </PopupDialog>
+  );
 }

@@ -2,6 +2,7 @@ import {verifyCircom} from './verifyCircom.js';
 import {generateApiKey, removeApiKey, listApiKey} from './apiKeys.js';
 import {storeSolcOutput, storeDeployedAddress} from './browserDeploy.js';
 import {storeGithubHash} from './githubLink.js';
+import {insertDirectoryContract} from './directory.js';
 import {updateP0tion} from './p0tion.js';
 
 export async function handler(event) {
@@ -31,6 +32,8 @@ export async function handler(event) {
         return await storeDeployedAddress(event);
       case 'storeGithubHash':
         return await storeGithubHash(event);
+      case 'insertDirectoryContract':
+        return await insertDirectoryContract(event);
       default:
         throw new Error('invalid_command');
     }

@@ -5,6 +5,24 @@ import S3RangeZip from 's3-range-zip';
 const blobCache = {};
 const infoCache = {};
 
+export function removeDuplicates(obj) {
+  const uniqueIds = new Set();
+  const result = {};
+
+  for (const key in obj) {
+    const currentItem = obj[key];
+
+    // Check if the id is already in the uniqueIds set
+    if (!uniqueIds.has(currentItem.id)) {
+      // If not, add the id to the set and the key-value pair to the result
+      uniqueIds.add(currentItem.id);
+      result[key] = currentItem;
+    }
+  }
+
+  return result;
+}
+
 export async function generateSHA256Hash(message) {
   const msgUint8 = new TextEncoder().encode(message); // encode the message as a UTF-8 array
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // hash the message

@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/solid';
 
 import Card from '../components/Card.js';
+import Directory from '../components/Directory.js';
 import Newest from '../components/Newest.js';
 import {clsButton, clsIconA} from '../components/Layout.js';
 
@@ -68,47 +69,7 @@ export function Home() {
         text-xl pt-6 pb-3
         border-b border-neutral-300 dark:border-neutral-600
       `}>Circuit Verifier Directory</h3>
-      <p className="py-3">
-        Curated list of popular zk dapp verifiers under construction...
-      </p>
-      <ul className="mb-6">
-        <li>
-          <Link
-            className={`
-              py-3 flex items-center justify-between
-              ${clsIconA}
-            `}
-            to={`/chain/11155111/address/0x84ac07EfC0c7093416aCd6189a600AD479CFA045`}
-          >
-            <span className={`
-              text-ellipsis inline-block overflow-hidden
-              mr-1 grow
-            `}>
-              <span className="font-bold">
-                ZKP2P VenmoSendProcessor Sepolia deployment
-              </span>
-            </span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            className={`
-              py-3 flex items-center justify-between
-              ${clsIconA}
-            `}
-            to={`/chain/11155111/address/0x72687fAbC8F025233C6aA5c2a9Cf092365ed741D`}
-          >
-            <span className={`
-              text-ellipsis inline-block overflow-hidden
-              mr-1 grow
-            `}>
-              <span className="font-bold">
-                Anon Aadhaar Sepolia deployment
-              </span>
-            </span>
-          </Link>
-        </li>
-      </ul>
+      <Directory />
     </Card>
     <Newest />
   </div>);

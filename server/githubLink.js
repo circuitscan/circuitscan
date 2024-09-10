@@ -27,11 +27,24 @@ export async function storeGithubHash(body) {
   };
   const hash = createHash('sha256').update(body.payload.code).digest('hex');
 
-  await transformS3Json(process.env.ASSOC_BUCKET, `github-hash/${hash}.json`, data => {
-    if(!('links' in data)) data.links = [];
-    data.links.push(body.payload.url);
-    return data;
-  });
+  try {
+    await transformS3Json(process.env.ASSOC_BUCKET, `github-hash/${hash}.json`, data => {
+      if(!('links' in data)) data.links = [];
+      if(data.links.includes(body.payload.url)) throw new DuplicateLinkError;
+      data.links.push(body.payload.url);
+      return data;
+    });
+  } catch(error) {
+    if(error instanceof DuplicateLinkError) return {
+      statusCode: 400,
+      body: JSON.stringify({
+        errorType: 'bad_request',
+        errorMessage: 'Duplicate link submitted',
+      }),
+    };
+    // Otherwise...
+    throw error;
+  }
 
   return {
     statusCode: 200,
@@ -41,6 +54,8 @@ export async function storeGithubHash(body) {
     }),
   };
 }
+
+class DuplicateLinkError extends Error {}
 
 function acceptableDiff(sourceA, sourceB) {
   const diff = diffTrimmedLines(sourceA, sourceB, {
