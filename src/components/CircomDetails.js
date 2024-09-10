@@ -13,6 +13,7 @@ import {
   p0tionDetails,
 } from '../utils.js';
 
+import {clsIconA} from './Layout.js';
 import Card from './Card.js';
 import {SourceTree} from './SourceTree.js';
 import {ProofMaker} from './ProofMaker.js';
@@ -68,6 +69,20 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
               <span>{info.protocol}</span>
               {info.protocol === 'groth16' && <ZkeyStatus finalZKey={info.finalZKey} />}
             </dd>
+            {info.ptau && <>
+              <dt className="text-l font-bold">PTAU</dt>
+              <dd className="pl-6">{isNaN(info.ptau) ?
+                <a
+                  href={info.ptau}
+                  target="_blank"
+                  rel="noopener"
+                  className={clsIconA}
+                >
+                  {(new URL(info.ptau)).pathname.split('/').pop()}
+                </a>
+                : info.ptau
+              }</dd>
+            </>}
             <dt className="text-l font-bold">SnarkJS Version</dt>
             <dd className="pl-6">{info.snarkjsVersion}</dd>
             <dt className="text-l font-bold">Template</dt>

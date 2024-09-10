@@ -29,7 +29,10 @@ export function BuildStatus({ requestId }) {
             .filter(x => ['Circom memory usage', 'Memory Usage Update'].indexOf(x.msg) !== -1)
             .map(x => ({
               memory: x.data.memoryUsage ? x.data.memoryUsage * 1024 : x.data.memory.rss,
-              disk: x.data.disk ? Number(x.data.disk.find(x => x.Mounted === '/tmp').Used) * 1024 : 0,
+              disk: x.data.disk ? Number((
+                x.data.disk.find(x => x.Mounted === '/tmp')
+                // Some compiles won't have a specific /tmp mount
+                || x.data.disk.find(x => x.Mounted === '/')).Used) * 1024 : 0,
               time: x.time,
             })),
         });
