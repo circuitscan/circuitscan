@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { isAddress } from 'viem';
 import * as chains from 'viem/chains';
+import {
+  CheckBadgeIcon,
+} from '@heroicons/react/24/solid';
 
 import {PopupDialog} from './PopupDialog.js';
 import {clsInput, clsIconA} from './Layout.js';
@@ -49,32 +52,55 @@ export default function Directory() {
   if(data) return (<>
     <ul className="py-4">
     {Object.keys(data.projects).sort().map(projectName =>
-      <li key={projectName}>
-        <span className="text-lg font-bold block">{projectName}</span>
-        <ul className="pl-2">
-          {Object.keys(data.projects[projectName]).map(chainId =>
-            <li key={chainId}>
-              <span className="block">{findChain(chainId).name}</span>
-              <ul className="pl-2">
-                {Object.keys(data.projects[projectName][chainId]).map(contractName =>
-                  <li key={contractName}>
-                    <span className="block">{contractName}</span>
-                    <ul className="pl-2">
-                      {data.projects[projectName][chainId][contractName].contracts.map(contract =>
-                        <li key={contract}>
-                          <Link
-                            to={`/chain/${chainId}/address/${contract}`}
-                            className={`${clsIconA}`}
-                          >{contract}</Link>
-                        </li>
-                      )}
-                    </ul>
-                  </li>
-                )}
-              </ul>
-            </li>
-          )}
-        </ul>
+      <li
+        key={projectName}
+        className={`
+          py-3 border-b border-neutral-300 dark:border-neutral-600
+          [&_svg]:open:-rotate-180
+        `}
+      >
+        <details>
+          <summary className="cursor-pointer text-lg font-bold block">
+            <svg className="rotate-0 transform transition-all duration-300 inline-block align-text-top" fill="none" height="20" width="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            {projectName}
+          </summary>
+          <ul className="pl-5">
+            {Object.keys(data.projects[projectName]).map(chainId =>
+              <li key={chainId}>
+                <details>
+                  <summary className="cursor-pointer block font-bold">
+                    <svg className="rotate-0 transform transition-all duration-300 inline-block align-text-top" fill="none" height="20" width="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    {findChain(chainId).name}
+                  </summary>
+                  <ul className="pl-5">
+                    {Object.keys(data.projects[projectName][chainId]).map(contractName =>
+                      <li key={contractName}>
+                        <span className="block">{contractName}</span>
+                        <ul className="pl-2">
+                          {data.projects[projectName][chainId][contractName].contracts.map(contract =>
+                            <li key={contract}>
+                              <Link
+                                to={`/chain/${chainId}/address/${contract}`}
+                                className={`${clsIconA}`}
+                              >
+                                <CheckBadgeIcon className="h-5 w-5 inline-block align-text-top mr-1 text-lightaccent dark:text-darkaccent" />
+                                {contract}
+                              </Link>
+                            </li>
+                          )}
+                        </ul>
+                      </li>
+                    )}
+                  </ul>
+                </details>
+              </li>
+            )}
+          </ul>
+        </details>
       </li>
     )}
     </ul>
@@ -91,14 +117,13 @@ function SubmitContract({ setReloadCount, data={projects:{}} }) {
   const [projectNames, setProjectNames] = useState([]);
   const inputRef = useRef(null);
 
-// TODO infinite loop!
-//   useEffect(() => {
-//     setProjectNames(Object.keys(data.projects));
-//   }, [data]);
-// 
   useEffect(() => {
-    setContractNames(projectName in data.projects
-      ? Object.keys(data.projects[projectName])
+    setProjectNames(Object.keys(data.projects));
+  }, []);
+
+  useEffect(() => {
+    setContractNames(projectName in data.projects && chainId in data.projects[projectName]
+      ? Object.keys(data.projects[projectName][chainId])
       : []
     );
   }, [projectName]);
@@ -131,10 +156,10 @@ function SubmitContract({ setReloadCount, data={projects:{}} }) {
           projectName,
         }),
       });
-      const data = await result.json();
-      if('errorType' in data) {
+      const response = await result.json();
+      if('errorType' in response) {
         toast.dismiss();
-        toast.error(data.errorMessage);
+        toast.error(response.errorMessage);
         return;
       }
       setReloadCount(n => n + 1);
