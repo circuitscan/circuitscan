@@ -33,13 +33,13 @@ export function PopupDialog({ linkText, onSubmit, inputRef, children }) {
     onSubmit(event, () => setShowForm(false));
   }
 
-  return (<>
+  return (<div className="relative inline-block">
     <button
       className={`${clsIconA} text-sm text-nowrap inline-block px-2`}
       onClick={toggleForm}
     >{linkText}</button>
     <dialog open={showForm} className={`
-      z-50 left-5
+      z-50 absolute w-96
       mx-3 -mt-5 px-6 pt-6 pb-2 border rounded-md
       bg-neutral-100 border-neutral-300
       dark:bg-neutral-900 dark:border-neutral-600
@@ -58,5 +58,5 @@ export function PopupDialog({ linkText, onSubmit, inputRef, children }) {
         >Cancel</button>
       </form>
     </dialog>
-  </>);
+  </div>);
 }

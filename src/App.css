@@ -51,3 +51,7 @@
 #logo {
   background-image: url(images/logo-dark.png);
 }}
+
+details[open]>summary>svg {
+  transform: rotate(180deg);
+}

@@ -5,6 +5,7 @@ import { isAddress } from 'viem';
 import * as chains from 'viem/chains';
 import {
   CheckBadgeIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/solid';
 
 import {PopupDialog} from './PopupDialog.js';
@@ -56,14 +57,11 @@ export default function Directory() {
         key={projectName}
         className={`
           py-3 border-b border-neutral-300 dark:border-neutral-600
-          [&_svg]:open:-rotate-180
         `}
       >
         <details>
           <summary className="cursor-pointer text-lg font-bold block">
-            <svg className="rotate-0 transform transition-all duration-300 inline-block align-text-top" fill="none" height="20" width="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+            <ChevronDownIcon className="h-5 w-5 inline-block align-text-top mr-1 transition-transform" />
             {projectName}
           </summary>
           <ul className="pl-5">
@@ -71,9 +69,7 @@ export default function Directory() {
               <li key={chainId}>
                 <details>
                   <summary className="cursor-pointer block font-bold">
-                    <svg className="rotate-0 transform transition-all duration-300 inline-block align-text-top" fill="none" height="20" width="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    <ChevronDownIcon className="h-5 w-5 inline-block align-text-top mr-1 transition-transform" />
                     {findChain(chainId).name}
                   </summary>
                   <ul className="pl-5">
@@ -126,7 +122,7 @@ function SubmitContract({ setReloadCount, data={projects:{}} }) {
       ? Object.keys(data.projects[projectName][chainId])
       : []
     );
-  }, [projectName]);
+  }, [projectName, chainId]);
 
   async function submitForm(event, hideForm) {
     if(!isAddress(contractAddress)) {
