@@ -60,7 +60,7 @@ export default function Directory() {
         `}
       >
         <details>
-          <summary className="cursor-pointer text-lg font-bold block">
+          <summary className="cursor-pointer text-lg font-bold block truncate">
             <ChevronDownIcon className="h-5 w-5 inline-block align-text-top mr-1 transition-transform" />
             {projectName}
           </summary>
@@ -68,20 +68,20 @@ export default function Directory() {
             {Object.keys(data.projects[projectName]).map(chainId =>
               <li key={chainId}>
                 <details>
-                  <summary className="cursor-pointer block font-bold">
+                  <summary className="cursor-pointer block truncate font-bold">
                     <ChevronDownIcon className="h-5 w-5 inline-block align-text-top mr-1 transition-transform" />
                     {findChain(chainId).name}
                   </summary>
                   <ul className="pl-5">
                     {Object.keys(data.projects[projectName][chainId]).map(contractName =>
                       <li key={contractName}>
-                        <span className="block">{contractName}</span>
+                        <span className="block truncate block">{contractName}</span>
                         <ul className="pl-2">
                           {data.projects[projectName][chainId][contractName].contracts.map(contract =>
                             <li key={contract}>
                               <Link
                                 to={`/chain/${chainId}/address/${contract}`}
-                                className={`${clsIconA}`}
+                                className={`${clsIconA} truncate block`}
                               >
                                 <CheckBadgeIcon className="h-5 w-5 inline-block align-text-top mr-1 text-lightaccent dark:text-darkaccent" />
                                 {contract}
