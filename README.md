@@ -8,9 +8,9 @@
 
 - [x] support more than just latest circom version
 - [ ] add support for noir verifiers too
-- [ ] ddos protection! / account system (sign in with ethereum)
+- [x] ddos protection! / account system (sign in with ethereum)
 - [x] [api for programmatic verification](https://github.com/circuitscan/cli) / command in circomkit fo ci
-- [ ] testing on circuit verifiers in the wild
+- [x] testing on circuit verifiers in the wild
 
 ## Installation
 
