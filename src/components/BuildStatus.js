@@ -28,7 +28,8 @@ export function BuildStatus({ requestId }) {
           memory: data
             .filter(x => ['Circom memory usage', 'Memory Usage Update'].indexOf(x.msg) !== -1)
             .map(x => ({
-              memory: x.data.memoryUsage ? x.data.memoryUsage * 1024 : x.data.memory.rss,
+              memory: typeof x.data.memoryUsage !== 'undefined' ? x.data.memoryUsage * 1024 :
+                typeof x.data.memory !== 'undefined' ? x.data.memory.rss : 0,
               disk: x.data.disk ? Number((
                 x.data.disk.find(x => x.Mounted === '/tmp')
                 // Some compiles won't have a specific /tmp mount
