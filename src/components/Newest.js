@@ -1,5 +1,8 @@
 import {useState, useEffect} from 'react';
 import { Link } from 'react-router-dom';
+import {
+  ArrowPathIcon,
+} from '@heroicons/react/24/solid';
 
 import Card from './Card.js';
 import {clsIconA, clsButton} from './Layout.js';
@@ -12,22 +15,25 @@ export default function Newest() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reloadCount, setReloadCount] = useState(0);
 
-  useEffect(() => {
-    const loadAsyncData = async () => {
-      try {
-        const result = await fetch(import.meta.env.VITE_BLOB_URL + 'latest.json');
-        const data = await result.json();
-        setList(data.list.reverse());
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const reload = async (cache) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetch(import.meta.env.VITE_BLOB_URL + 'latest.json', {cache});
+      const data = await result.json();
+      setList(data.list.reverse());
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadAsyncData();
-  }, []);
+  useEffect(() => { reload() }, []);
+  // Reloads after updates should break the cache
+  useEffect(() => { reload('reload') }, [reloadCount]);
 
   return (<>
     {loading ? <>
@@ -50,6 +56,13 @@ export default function Newest() {
       </Card>
     </> : list ? <>
       <Card>
+          <button
+            onClick={() => setReloadCount(reloadCount + 1)}
+            className={`${clsIconA} flex float-right mt-8 leading-4`}
+          >
+            <ArrowPathIcon className="h-4 w-4 mr-1" />
+            Refresh
+          </button>
           <h3 className={`
             text-xl pt-6 pb-3
             border-b border-neutral-300 dark:border-neutral-600
