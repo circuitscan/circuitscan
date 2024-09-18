@@ -46,7 +46,7 @@ export function BuildStatus({ requestId }) {
     };
 
     loadAsyncData();
-  }, []);
+  }, [requestId]);
 
   return (<>
     {loading && <Card>Loading build status...</Card>}

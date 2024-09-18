@@ -14,13 +14,13 @@ import bsUrls from 'blockscout-urls';
 
 import Card from '../components/Card.js';
 import {CircomDetails} from '../components/CircomDetails.js';
+import {Groth16MultiDetails} from '../components/Groth16MultiDetails.js';
 import {clsIconA} from '../components/Layout.js';
 import {
   findChain,
   setClipboard,
   fetchInfo,
   formatBytes,
-  loadListOrFile,
 } from '../utils.js';
 
 export default function Address() {
@@ -114,7 +114,7 @@ export default function Address() {
               <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
             </a>}&nbsp;
 
-            {isAddressOnThisChain && <a
+            {isAddressOnThisChain && data[chainParam].info.circuit && <><a
               href={`${import.meta.env.VITE_BLOB_URL}build/${data[chainParam].pkg_name}/pkg.zip`}
               target="_blank"
               rel="noopener"
@@ -122,7 +122,7 @@ export default function Address() {
               className={`${clsIconA} print:hidden`}
             >
               <FolderArrowDownIcon className="inline h-5 w-5" />
-            </a>}&nbsp;
+            </a>&nbsp;</>}
 
             {isAddressOnThisChain && <a
               href={`https://remix.ethereum.org/address/${address}`}
@@ -181,13 +181,19 @@ export default function Address() {
           <p>{parsedData.errorMessage}</p>
         </Card>
       </> : data && isAddressOnThisChain ? <>
-        <div className="">
+        {data[chainParam].info.circuit ?
           <CircomDetails
             pkgName={data[chainParam].pkg_name}
             info={data[chainParam].info}
             {...{chainParam, address}}
             />
-        </div>
+          : data[chainParam].info.type === 'groth16multi' ?
+            <Groth16MultiDetails
+              info={data[chainParam].info}
+              />
+          : <Card>
+              <p>Invalid details!</p>
+            </Card>}
       </> : <>
         <p>Unkown error occurred!</p>
       </>}

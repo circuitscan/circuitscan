@@ -21,6 +21,10 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
   const [fileError, setFileError] = useState(null);
 
   useEffect(() => {
+    setCurFile(rootFile);
+  }, [rootFile]);
+
+  useEffect(() => {
     const loadAsyncData = async () => {
       try {
         const result = await loadListOrFile(`build/${pkgName}/source.zip`);
@@ -33,7 +37,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     };
 
     loadAsyncData();
-  }, []);
+  }, [pkgName]);
 
   useEffect(() => {
     const loadAsyncData = async () => {

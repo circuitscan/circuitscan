@@ -55,7 +55,7 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
     };
 
     loadAsyncData();
-  }, []);
+  }, [info, pkgName]);
 
   async function downloadPkey() {
     // Load simultaneously
