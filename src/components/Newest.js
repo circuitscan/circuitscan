@@ -132,8 +132,10 @@ function VerifierDisplay({ pkgName }) {
   return (<>
     {loading ? <>
       Loading...
-    </> : info ? <>
+    </> : info && info.circuit ? <>
       {info.circuit.template}({info.circuit.params && info.circuit.params.join(', ')}) - {info.protocol}
+    </> : info && info.type === 'groth16multi' ? <>
+      Groth16 Multi Verifier
     </> : <>
       Error loading!
     </>}
