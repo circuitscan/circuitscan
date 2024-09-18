@@ -1,15 +1,11 @@
 import {diffTrimmedLines} from 'diff';
 import verifiedSource from 'verified-solidity-source';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-import {transformS3Json} from './utils.js';
+import {saveAssoc} from './utils.js';
 
-// TODO allow multi-verifiers
 const HARDHAT_IMPORT = 'import "hardhat/console.sol";';
 const CONTRACT_DEF_REGEX = /^contract [a-zA-Z0-9_]+\s*{?\n$/;
 const PRAGMA_REGEX = /^pragma solidity \S+;\n$/g
-
-const s3Client = new S3Client();
 
 export async function verifyCircom(event) {
   if(isNaN(event.payload.chainId))
@@ -44,28 +40,7 @@ export async function verifyCircom(event) {
     throw new Error('invalid_diff');
   }
 
-  // save pkgName association in s3 blob/assoc/<address>.json {[chainid]: "<pkgname>"}
-  await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${event.payload.contract}.json`, data => {
-    if(event.payload.chainId in data)
-      throw new Error('already_verified');
-    data[event.payload.chainId] = event.payload.pkgName;
-    return data;
-  });
-
-  // maintain list of newest n verifiers
-  // make a new file that is then aggregated by a separate lambda on a timer
-  // into latest.json so that multiple verifications can occur simultaneously
-  await s3Client.send(new PutObjectCommand({
-    Bucket: process.env.ASSOC_BUCKET,
-    Key:`latest-queue/${event.payload.chainId}-${event.payload.contract}.json`,
-    ContentType: 'application/json',
-    Body: JSON.stringify({
-      chain: event.payload.chainId,
-      address: event.payload.contract,
-      pkgName: event.payload.pkgName,
-      createdAt: Math.floor(Date.now() / 1000),
-    }),
-  }));
+  await saveAssoc(event.payload.contract, event.payload.chainId, event.payload.pkgName);
 
   return {
     statusCode: 200,

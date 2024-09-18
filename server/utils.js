@@ -3,6 +3,31 @@ import { Readable } from 'node:stream';
 
 const s3Client = new S3Client();
 
+export async function saveAssoc(contract, chainId, pkgName) {
+  // save pkgName association in s3 blob/assoc/<address>.json {[chainid]: "<pkgname>"}
+  await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${contract}.json`, data => {
+    if(chainId in data)
+      throw new Error('already_verified');
+    data[chainId] = pkgName;
+    return data;
+  });
+
+  // maintain list of newest n verifiers
+  // make a new file that is then aggregated by a separate lambda on a timer
+  // into latest.json so that multiple verifications can occur simultaneously
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.ASSOC_BUCKET,
+    Key:`latest-queue/${chainId}-${contract}.json`,
+    ContentType: 'application/json',
+    Body: JSON.stringify({
+      chain: chainId,
+      address: contract,
+      pkgName: pkgName,
+      createdAt: Math.floor(Date.now() / 1000),
+    }),
+  }));
+}
+
 export async function transformS3Json(bucketName, key, transformCallback) {
   // Load the existing JSON file from S3
   const getObjectParams = {

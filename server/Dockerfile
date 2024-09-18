@@ -10,3 +10,4 @@ CMD ["index.handler"]
 
 # Copy app source last for faster rebuilds
 COPY *.js ${LAMBDA_TASK_ROOT}/
+COPY modifiers/*.js ${LAMBDA_TASK_ROOT}/modifiers/
