@@ -135,7 +135,7 @@ function VerifierDisplay({ pkgName }) {
     </> : info && info.circuit ? <>
       {info.circuit.template}({info.circuit.params && info.circuit.params.join(', ')}) - {info.protocol}
     </> : info && info.type === 'groth16multi' ? <>
-      Groth16 Multi Verifier
+      Groth16 Multi Verifier{info.payload.modifier && <>&nbsp;({info.payload.modifier})</>}
     </> : <>
       Error loading!
     </>}
