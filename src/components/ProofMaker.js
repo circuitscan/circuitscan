@@ -4,11 +4,14 @@ import {
   http,
   encodeFunctionData,
 } from 'viem';
+import {
+  QuestionMarkCircleIcon,
+} from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 // TODO support multiple version of snarkjs
 import * as snarkjs from 'snarkjs';
 
-import {clsButton, clsInput} from './Layout.js';
+import {clsButton, clsInput, clsIconA} from './Layout.js';
 import {
   findChain,
   verifierABI,
@@ -131,7 +134,18 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
     </> : error ? <>
       Error loading!
     </> : <>
-      <p className="text-l font-bold">Proof Input Signals</p>
+      <p className="text-l font-bold pb-1">
+        Proof Input Signals
+        &nbsp;<a
+          href={`https://circuitscan.readthedocs.io/en/latest/build-artifacts.html#in-browser-proof-generator`}
+          target="_blank"
+          rel="noopener"
+          className={`${clsIconA}`}
+          title="View proof generator documentation..."
+        >
+          <QuestionMarkCircleIcon className="inline h-5 w-5" />
+        </a>
+      </p>
       <textarea
         className={`${clsInput} min-h-32`}
         onChange={(e) => setProofInputs(e.target.value)}

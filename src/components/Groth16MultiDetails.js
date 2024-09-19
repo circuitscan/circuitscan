@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   FolderArrowDownIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 
 import Card from './Card.js';
@@ -66,7 +67,24 @@ export function Groth16MultiDetails({ info }) {
       </Card>
     </> : <>
       <Card>
-        <p className="text-l font-bold pb-1">Multi-verifier</p>
+        <p className="text-l font-bold pb-1">
+          Multi-verifier
+          {info.payload.modifier && <>&nbsp;(<a
+            href={`https://github.com/circuitscan/circuitscan/blob/main/server/modifiers/${info.payload.modifier}.js`}
+            target="_blank"
+            rel="noopener"
+            className={`${clsIconA}`}
+          >{info.payload.modifier}</a>)</>}
+          &nbsp;<a
+            href={`https://circuitscan.readthedocs.io/en/latest/usage.html#verify-a-multi-verifier-already-deployed-on-chain`}
+            target="_blank"
+            rel="noopener"
+            className={`${clsIconA}`}
+            title="View multi-verifier documentation..."
+          >
+            <QuestionMarkCircleIcon className="inline h-5 w-5" />
+          </a>
+        </p>
         <select
           className={`w-[calc(100%-3rem)] ${clsButton}`}
           onChange={(e) => setSelectedVerifier(e.target.value)}
