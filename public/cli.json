@@ -1,7 +1,6 @@
 {
   "serverURL": "https://xjmckfg3a22qkqxvtoicidzqaa0hghmg.lambda-url.us-west-2.on.aws/",
-  "lambdaCompilerURL": "https://zdu4l4qdtornv6svftwwpzjxgu0rsbwc.lambda-url.us-west-2.on.aws/",
-  "ec2CompilerURL": "https://h5wb4nrdnpmtsec6qrbdpomxfm0cnigs.lambda-url.us-west-2.on.aws/",
+  "ec2CompilerURL": "https://hyfnrv46mz7t7ip5vxivqjao3m0fraxp.lambda-url.us-west-2.on.aws/",
   "blobUrl": "https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/",
   "browserWalletURL": "https://circuitscan.org/deploy-verifier",
   "defaultCircomPath": "circom-v2.1.8"
