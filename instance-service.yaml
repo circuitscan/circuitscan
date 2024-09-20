@@ -1,0 +1,402 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AWS CloudFormation Template to create a Lambda function that can start, stop, and get status ec2 instances configured to compile circom circuits.
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+  AssocBucket:
+    Type: String
+    Description: S3 Bucket in which to store package/address associations
+    Default: circuitscan-artifacts
+  APIKeyBucketName:
+    Description: Name of the new private S3 bucket (Was created by main server stack)
+    Type: String
+    Default: circuitscan-apikeys
+  AllowedInstances:
+    Type: String
+    Description: Comma separated list of instance types (no spaces)
+    Default: t3.medium,t3.large,r7i.large,r7i.xlarge,r7i.2xlarge,r7i.4xlarge,r7i.8xlarge,r7i.12xlarge,r7i.16xlarge
+  AdminEmail:
+    Description: Email to receive start/stop notifications (must be verified as sender in SES)
+    Type: String
+    Default: "notify@circuitscan.org"
+  CloneUrls:
+    Description: Source code repos
+    Type: String
+    Default: '{"circom":"https://github.com/circuitscan/circom-pipeline.git"}'
+
+Resources:
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'LambdaPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                  - 'ses:SendEmail'
+                  - 'ses:SendRawEmail'
+                  - 'ec2:RunInstances'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource:
+                  - !Sub arn:aws:s3:::${APIKeyBucketName}/*
+                  - !Sub arn:aws:s3:::${APIKeyBucketName}
+                  - !Sub arn:aws:s3:::${AssocBucket}/*
+                  - !Sub arn:aws:s3:::${AssocBucket}
+              - Effect: Allow
+                Action:
+                  - "iam:PassRole"
+                Resource:
+                  - !GetAtt InstanceRole.Arn
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow only ssh access to the instance
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  InstanceIAMUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: !Sub "${AWS::StackName}-CircomCompilerInstanceUser"
+      Policies:
+        - PolicyName: CircomCompilerUserPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'ec2:TerminateInstances'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                Resource:
+                  - !Sub arn:aws:s3:::${AssocBucket}/*
+                  - !Sub arn:aws:s3:::${AssocBucket}
+
+  InstanceAccessKey:
+    Type: 'AWS::IAM::AccessKey'
+    Properties:
+      UserName: !Ref InstanceIAMUser
+
+  InstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: 'S3UploadPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                Resource:
+                  - !Sub arn:aws:s3:::${AssocBucket}/*
+                  - !Sub arn:aws:s3:::${AssocBucket}
+
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  StartStopLambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-StartStopInstances"
+      Handler: 'index.handler'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: 'nodejs20.x'
+      Timeout: 60
+      Environment:
+        Variables:
+          ADMIN_EMAIL: !Ref AdminEmail
+          BLOB_BUCKET: !Ref AssocBucket
+          SSH_KEY_NAME: !Ref KeyName
+          SECURITY_GROUP: !Ref InstanceSecurityGroup
+          ALLOWED_INSTANCES: !Ref AllowedInstances
+          INSTANCE_ACCESS_ID: !Ref InstanceAccessKey
+          INSTANCE_ACCESS_SECRET: !GetAtt InstanceAccessKey.SecretAccessKey
+          INSTANCE_PROFILE: !Ref InstanceProfile
+          CLONE_URLS: !Ref CloneUrls
+          APIKEY_BUCKET: !Ref APIKeyBucketName
+
+      Code:
+        ZipFile: |
+          const { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+          const { EC2Client, RunInstancesCommand } = require("@aws-sdk/client-ec2");
+          const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+
+          const s3Client = new S3Client({ region: process.env.AWS_REGION });
+          const ec2Client = new EC2Client({ region: process.env.AWS_REGION });
+          const sesClient = new SESClient({ region: process.env.AWS_REGION });
+
+          function streamToString(stream) {
+              return new Promise((resolve, reject) => {
+                  const chunks = [];
+                  stream.on('data', (chunk) => chunks.push(chunk));
+                  stream.on('error', reject);
+                  stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+              });
+          }
+
+          async function s3KeyExists(Bucket, Key) {
+            try {
+              const data = await s3Client.send(new HeadObjectCommand({
+                Bucket, Key
+              }));
+            } catch (error) {
+              if (error.name === 'NotFound') {
+                return false;
+              } else {
+                throw error;
+              }
+            }
+            return true;
+          }
+
+          async function transformS3Json(bucketName, key, transformCallback) {
+            // Load the existing JSON file from S3
+            const getObjectParams = {
+                Bucket: bucketName,
+                Key: key,
+            };
+
+            let jsonData;
+
+            try {
+                const data = await s3Client.send(new GetObjectCommand(getObjectParams));
+                // Convert stream to string
+                const jsonString = await streamToString(data.Body);
+                // Parse the JSON data
+                jsonData = JSON.parse(jsonString);
+            } catch (error) {
+                if (error.name === 'NoSuchKey') {
+                    jsonData = {};
+                } else {
+                    throw error;
+                }
+            }
+
+            // Transform the data using the provided callback
+            const transformedData = await transformCallback(jsonData);
+
+            // Convert the transformed data back to JSON string
+            const transformedJsonString = JSON.stringify(transformedData);
+
+            // Save the new version back to S3
+            const putObjectParams = {
+                Bucket: bucketName,
+                Key: key,
+                Body: transformedJsonString,
+                ContentType: 'application/json',
+            };
+
+            await s3Client.send(new PutObjectCommand(putObjectParams));
+          }
+
+          async function sendEmail(bodyObj) {
+            const emailParams = {
+              Source: process.env.ADMIN_EMAIL,
+              Destination: {
+                ToAddresses: [process.env.ADMIN_EMAIL],
+              },
+              Message: {
+                Subject: {
+                  Data: `Circuitscan Instance Invoked`,
+                },
+                Body: {
+                  Text: {
+                    Data: JSON.stringify(bodyObj, null, 2),
+                  },
+                },
+              },
+            };
+
+            try {
+              await sesClient.send(new SendEmailCommand(emailParams));
+            } catch (error) {
+              console.error("Error sending email", error);
+            }
+          }
+
+          exports.handler = async (event) => {
+            console.log(event);
+            const body = JSON.parse(event.body);
+            const pipelines = JSON.parse(process.env.CLONE_URLS);
+            if(!body.payload) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Missing payload',
+              }),
+            };
+            if(!(body.payload.pipeline in pipelines)) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Invalid payload.pipeline',
+              }),
+            };
+            if(process.env.ALLOWED_INSTANCES.split(',').indexOf(body.payload.instanceType) === -1) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Invalid payload.instanceType',
+              }),
+            };
+            if(!(/^[0-9a-zA-Z]{40}$/.test(body.payload.requestId))) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Invalid payload.requestId',
+              }),
+            };
+            if(await s3KeyExists(process.env.BLOB_BUCKET, `payload/${body.payload.requestId}.json`)) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Duplicate payload.requestId',
+              }),
+            };
+            try {
+              // Ensure API key is active and save the request ID
+              await transformS3Json(process.env.APIKEY_BUCKET, `uses/${body.apiKey}.json`, data => {
+                if(!('address' in data))
+                  throw new Error('invalid_api_key');
+                if(data.inactive)
+                  throw new Error('inactive_api_key');
+
+                data.requests.push(body.payload.requestId);
+                return data;
+              });
+            } catch(error) {
+              return {
+                statusCode: 400,
+                body: JSON.stringify({
+                  errorType: 'bad_request',
+                  errorMessage: error.message
+                }),
+              };
+            }
+
+            await sendEmail({
+              requestId: body.payload.requestId,
+              instanceType: body.payload.instanceType,
+            });
+            await s3Client.send(new PutObjectCommand({
+              Bucket: process.env.BLOB_BUCKET,
+              Key: `payload/${body.payload.requestId}.json`,
+              Body: JSON.stringify(body.payload),
+              ContentType: 'application/json'
+            }));
+
+            await ec2Client.send(new RunInstancesCommand({
+              ImageId: 'ami-01cd4de4363ab6ee8', // amazon linux 23 us-west-2
+              InstanceType: body.payload.instanceType,
+              IamInstanceProfile: {
+                Name: process.env.INSTANCE_PROFILE,
+              },
+              MinCount: 1,
+              MaxCount: 1,
+              UserData: Buffer.from(`#!/bin/bash
+                yum install nodejs -y
+                yum install git -y
+                yum install -y aws-cli
+                curl https://${process.env.BLOB_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/payload/${body.payload.requestId}.json > /home/ec2-user/event.json
+                mkdir /home/ec2-user/.aws
+                REGION=$(ec2-metadata -z | awk '{print $2}' | sed 's/[a-z]$//')
+                echo "[default]\nregion = $REGION" > /home/ec2-user/.aws/config
+                echo "[default]\naws_access_key_id = ${process.env.INSTANCE_ACCESS_ID}\naws_secret_access_key = ${process.env.INSTANCE_ACCESS_SECRET}" > /home/ec2-user/.aws/credentials
+                INSTANCE_ID=$(TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
+                echo $INSTANCE_ID > /home/ec2-user/id.txt
+
+                # Load compiler repo
+                git clone ${pipelines[body.payload.pipeline]} /home/ec2-user/app
+                cd /home/ec2-user/app
+                npm install --production
+
+                # Run pipeline-specific installation script
+                if [ -f "setup.sh" ]; then
+                  bash setup.sh
+                fi
+
+                echo "export AWS_REGION=$REGION" >> /home/ec2-user/.bashrc
+                echo "export BLOB_BUCKET=${process.env.BLOB_BUCKET}" >> /home/ec2-user/.bashrc
+                echo "export AWS_ACCESS_KEY_ID=${process.env.INSTANCE_ACCESS_ID}" >> /home/ec2-user/.bashrc
+                echo "export AWS_SECRET_ACCESS_KEY=${process.env.INSTANCE_ACCESS_SECRET}" >> /home/ec2-user/.bashrc
+                source /home/ec2-user/.bashrc
+
+                # Run the job
+                node --max-old-space-size=1655300 node_modules/circuitscan-pipeline-runner/wrapper.js /home/ec2-user/event.json > ../stdout.txt 2> ../stderr.txt
+
+                # Report stderr/stdout to indicate process completion (success or failure)
+                aws s3 cp ../stdout.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/stdout.txt
+                aws s3 cp ../stderr.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/stderr.txt
+                # Self-destruct
+                sudo -u ec2-user aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+              `).toString('base64'),
+              KeyName: process.env.SSH_KEY_NAME,
+              SecurityGroupIds: [process.env.SECURITY_GROUP],
+            }));
+
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                status: 'ok',
+              }),
+            };
+          };
+
+  LambdaFunctionUrl:
+    Type: 'AWS::Lambda::Url'
+    Properties:
+      AuthType: 'NONE'
+      TargetFunctionArn: !GetAtt StartStopLambdaFunction.Arn
+
+  LambdaUrlInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunctionUrl'
+      FunctionName: !Ref StartStopLambdaFunction
+      Principal: '*'
+      FunctionUrlAuthType: 'NONE'
+
+Outputs:
+  LambdaFunctionUrl:
+    Description: 'URL of the Lambda Function'
+    Value: !GetAtt LambdaFunctionUrl.FunctionUrl
+
