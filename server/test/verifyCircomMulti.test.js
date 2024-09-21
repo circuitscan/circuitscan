@@ -1,7 +1,7 @@
 import {ok} from 'node:assert';
 import { readFileSync } from 'node:fs';
 import {join, dirname} from 'node:path';
-import {fileURLToPath} from 'url';
+import {fileURLToPath} from 'node:url';
 
 import { verifyCircomMulti } from '../verifyCircomMulti.js';
 
