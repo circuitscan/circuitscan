@@ -6,21 +6,30 @@ import prismLineNumbers from '../utils/prism-line-numbers.js';
 import {generateSHA256Hash} from '../utils.js';
 import {clsInput, clsIconA} from './Layout.js';
 import {PopupDialog} from './PopupDialog.js';
+import {Circomspect} from './Circomspect.js';
+import {AnnotatedText} from './AnnotatedText.js';
 
 const CodeBlock = ({ code, language }) => {
+  const [analyzedCode, setAnalyzedCode] = useState(null);
   useEffect(() => {
     prismLineNumbers(Prism);
     Prism.highlightAll();
+    setAnalyzedCode(null);
   }, [code, language]);
 
   return (<>
-    <GithubLink {...{code}} />
+    <div className="flex sm:flex-row flex-col items-center">
+      <div className="flex-1 max-w-full mb-2">
+        <GithubLink {...{code}} />
+      </div>
+      <Circomspect {...{code, analyzedCode, setAnalyzedCode}} />
+    </div>
     <pre
       className="line-numbers overflow-x-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
     >
-      <code className={`language-${language}`}>
-        {code}
-      </code>
+      {analyzedCode
+        ? (<AnnotatedText text={code} sections={analyzedCode} />)
+        : <code className={`language-${language}`}>{code}</code>}
     </pre>
   </>);
 };
@@ -73,7 +82,7 @@ function GithubLink({ code }) {
       {data.links.map(link => <a
           href={link}
           key={link}
-          className={`${clsIconA} text-nowrap ${data.links.length > 1 ? 'block' : 'inline-block'} px-2`}
+          className={`${clsIconA} truncate text-nowrap block px-2`}
           target="_blank"
           rel="noopener"
           title=""

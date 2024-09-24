@@ -17,7 +17,6 @@ import {
   verifierABI,
   joinPaths,
   getImports,
-  extractCircomTemplate,
   inputTemplate,
   loadListOrFile,
   formatBytes,
