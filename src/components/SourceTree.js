@@ -3,6 +3,7 @@ import {
   ArrowDownOnSquareStackIcon,
 } from '@heroicons/react/24/outline';
 
+import {Circomspect} from './Circomspect.js';
 import CodeBlock from './CodeBlock.js';
 import Card from './Card.js';
 import {clsButton, clsIconA} from './Layout.js';
@@ -19,12 +20,15 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
   const [error, setError] = useState(null);
   const [loadingFile, setLoadingFile] = useState(true);
   const [fileError, setFileError] = useState(null);
+  const [analyzedCode, setAnalyzedCode] = useState(null);
 
   useEffect(() => {
     setCurFile(rootFile);
   }, [rootFile]);
 
   useEffect(() => {
+    setAnalyzedCode(null);
+
     const loadAsyncData = async () => {
       try {
         const result = await loadListOrFile(`build/${pkgName}/source.zip`);
@@ -43,8 +47,13 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     const loadAsyncData = async () => {
       setLoadingFile(true);
       try {
-        const result = await loadListOrFile(`build/${pkgName}/source.zip`, curFile);
-        setSource(result);
+        if(analyzedCode) {
+          const file = analyzedCode.find(x => x.fileName === curFile);
+          setSource(file);
+        } else {
+          const result = await loadListOrFile(`build/${pkgName}/source.zip`, curFile);
+          setSource(result);
+        }
       } catch (err) {
         setFileError(err);
       } finally {
@@ -53,7 +62,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     };
 
     loadAsyncData();
-  }, [curFile]);
+  }, [curFile, analyzedCode]);
 
   if (loading) return <Card>Loading source file list...</Card>;
   if (error) return <Card>Error loading source file list: {error.message}</Card>;
@@ -75,8 +84,12 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     >
       <ArrowDownOnSquareStackIcon className="inline h-5 w-5" />
     </a>
-    {loadingFile ? <CodeBlock code="Loading..." />
-      : fileError ? <CodeBlock code="Error loading source!" />
-      : <CodeBlock code={source} language="javascript" />}
+    <Circomspect {...{pkgName, analyzedCode, setAnalyzedCode}} />
+
+    {analyzedCode && !loadingFile && typeof source === 'object'
+      ? <CodeBlock code={source.content} language="javascript" annotated={source} />
+      : loadingFile ? <CodeBlock code="Loading..." />
+        : fileError ? <CodeBlock code="Error loading source!" />
+        : <CodeBlock code={source} language="javascript" />}
   </Card>;
 }

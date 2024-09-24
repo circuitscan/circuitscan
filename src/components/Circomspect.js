@@ -1,36 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import init, { analyze_code } from '../utils/circomspect_wasm.js';
-import {clsButton} from './Layout.js';
 
-export function Circomspect({ code, analyzedCode, setAnalyzedCode }) {
+import init, { analyze_code } from '../utils/circomspect_wasm.js';
+import {clsButton, clsIconA} from './Layout.js';
+
+import {
+  loadListOrFile,
+} from '../utils.js';
+
+export function Circomspect({ pkgName, analyzedCode, setAnalyzedCode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setError(null);
     setLoading(false);
-  }, [code]);
+  }, [pkgName]);
+
   async function runAnalysis() {
     setLoading(true);
     setError(null);
     try {
-      const templates = extractTemplates(code);
-      if(templates.length) {
-        await init('/circomspect_wasm_bg.wasm');
-        for(let i=0; i < templates.length; i++) {
-          const template = templates[i];
-          // TODO support other curves
-          const result = analyze_code(template.body, 'BN254');
-          template.result = JSON.parse(result).map(item => {
-            const [start,end] = item.primary.split(',').map(x => Number(x));
-            item.start = start;
-            item.end = end;
-            return item;
+      // Load all sources
+      const list = (await loadListOrFile(`build/${pkgName}/source.zip`))
+        .filter(x => x.compressedSize > 0);
+      const allTemplates = [];
+      for(let i = 0; i < list.length; i++) {
+        const file = list[i];
+        const result = await loadListOrFile(`build/${pkgName}/source.zip`, file.fileName);
+        file.content = result;
+        file.templates = extractTemplates(result);
+        for(let j = 0; j < file.templates.length; j++) {
+          const template = file.templates[j];
+          template.index = allTemplates.length;
+          template.pos = file.content.indexOf(template.body);
+          template.reports = [];
+          // Create a flat list of the templates to send to Circomspect
+          allTemplates.push({
+            fileIndex: i,
+            templateIndex: j,
+            body: template.body,
           });
-          template.pos = code.indexOf(template.body);
         }
-        setAnalyzedCode(templates);
       }
+      if(allTemplates.length) {
+        await init('/circomspect_wasm_bg.wasm');
+        // Perform the analyzation
+        const raw = JSON.parse(analyze_code(allTemplates.map(x => x.body), 'BN254'));
+        if(raw[1].length > 0) {
+          console.log(raw);
+          throw new Error('Circomspect parsing error!');
+        }
+        // Put the reports in the hierarchical list
+        for(let report of raw[0]) {
+          const [start,end] = report.primary.split(',').map(x => Number(x));
+          report.start = start;
+          report.end = end;
+          if(report.primary_file_ids.length) {
+            const fromAllTpl = allTemplates[report.primary_file_ids[0]];
+            list[fromAllTpl.fileIndex].templates[fromAllTpl.templateIndex].reports.push(report);
+          } else {
+            console.log('Unbucketed analyzation report', report);
+          }
+        }
+      }
+      setAnalyzedCode(list);
     } catch(error) {
       console.error(error);
       setError(true);
@@ -39,15 +72,21 @@ export function Circomspect({ code, analyzedCode, setAnalyzedCode }) {
   }
 
   if(error) return <span className="text-red-500">Error Analyzing Source!</span>;
-  return (<>
+  return (<div className="mb-3">
     <button
-      className={`${clsButton}`}
+      className={`${clsButton} text-nowrap mb-0`}
       onClick={runAnalysis}
       disabled={loading || !!analyzedCode}
     >
-      Analyze Circuit Source
+      {loading ? 'Analyzing Sources...' : !!analyzedCode ? 'Sources Analyzed' : 'Analyze Circuit Source'}
     </button>
-  </>);
+    <a
+      href="https://github.com/trailofbits/circomspect"
+      target="_blank"
+      rel="noopener"
+      className={`${clsIconA} px-2 text-sm inline-block text-nowrap opacity-50`}
+    >Powered by Circomspect</a>
+  </div>);
 }
 
 function extractTemplates(circomSource) {

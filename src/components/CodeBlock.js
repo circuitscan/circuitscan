@@ -5,31 +5,27 @@ import { toast } from 'react-hot-toast';
 import prismLineNumbers from '../utils/prism-line-numbers.js';
 import {generateSHA256Hash} from '../utils.js';
 import {clsInput, clsIconA} from './Layout.js';
-import {PopupDialog} from './PopupDialog.js';
-import {Circomspect} from './Circomspect.js';
 import {AnnotatedText} from './AnnotatedText.js';
+import {PopupDialog} from './PopupDialog.js';
 
-const CodeBlock = ({ code, language }) => {
-  const [analyzedCode, setAnalyzedCode] = useState(null);
+const CodeBlock = ({ code, language, annotated }) => {
   useEffect(() => {
-    prismLineNumbers(Prism);
-    Prism.highlightAll();
-    setAnalyzedCode(null);
-  }, [code, language]);
+    if(!annotated) {
+      prismLineNumbers(Prism);
+      Prism.highlightAll();
+    }
+  }, [code, language, annotated]);
 
   return (<>
-    <div className="flex sm:flex-row flex-col items-center">
-      <div className="flex-1 max-w-full mb-2">
-        <GithubLink {...{code}} />
-      </div>
-      <Circomspect {...{code, analyzedCode, setAnalyzedCode}} />
-    </div>
+    <GithubLink {...{code}} />
     <pre
-      className="line-numbers overflow-x-auto w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
+      className="line-numbers w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
     >
-      {analyzedCode
-        ? (<AnnotatedText text={code} sections={analyzedCode} />)
-        : <code className={`language-${language}`}>{code}</code>}
+      <code className={`language-${language}`}>
+        {annotated ?
+          <AnnotatedText text={annotated.content} sections={annotated.templates} />
+          : typeof code === 'string' ? code : null}
+      </code>
     </pre>
   </>);
 };

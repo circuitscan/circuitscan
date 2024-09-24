@@ -30,7 +30,7 @@ export function AnnotatedText({ text, sections }) {
           `}
         >
           {textSegment}
-          <span className="absolute left-0 bottom-full mb-2 w-max max-w-xs p-2 text-xs text-white bg-neutral-700 rounded-md opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity group-hover:translate-y-[-2px] group-focus:translate-y-[-2px] whitespace-normal z-50">
+          <span className="absolute left-0 bottom-full w-max max-w-xs p-2 text-xs text-white bg-neutral-700 rounded-md opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity whitespace-normal z-50">
             {combinedMessage}
           </span>
         </span>
@@ -121,7 +121,7 @@ export function AnnotatedText({ text, sections }) {
 
       annotatedSections.push(
         <span key={`section-${idx}`}>
-          {renderSectionText(sectionText, section.result, sectionStart)}
+          {renderSectionText(sectionText, section.reports, sectionStart)}
         </span>
       );
 
@@ -138,12 +138,12 @@ export function AnnotatedText({ text, sections }) {
     }
 
     annotatedSections.push(<span key="line-numbers" aria-hidden="true" className="line-numbers-rows">
-      {new Array(text.split('\n').length - 1).fill(null).map((x, i) => <span key={i}></span>)}
+      {new Array(text.split('\n').length - (text.endsWith('\n') ? 1 : 0)).fill(null).map((x, i) => <span key={i}></span>)}
     </span>);
 
     return annotatedSections;
   };
 
-  return <code>{renderAnnotatedText()}</code>;
+  return <div>{renderAnnotatedText()}</div>;
 }
 
