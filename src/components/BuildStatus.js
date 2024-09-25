@@ -35,7 +35,17 @@ export function BuildStatus({ requestId }) {
                 // Some compiles won't have a specific /tmp mount
                 || x.data.disk.find(x => x.Mounted === '/')).Used) * 1024 : 0,
               time: x.time,
-            })),
+            }))
+            .reduce((out, cur, index) => {
+              const lastItem = out[out.length - 1];
+              if(index > 0 && cur.disk === 0 && lastItem.disk > 0) {
+                // Add Circom memory usage to the other memory value if they're interleaved
+                lastItem.memory += cur.memory;
+              } else {
+                out.push(cur);
+              }
+              return out;
+            }, []),
         });
       } catch (err) {
         console.error(err);
