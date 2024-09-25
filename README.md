@@ -1,16 +1,30 @@
+![Circuitscan logo](public/android-chrome-192x192.png)
+
 # Circuitscan
 
-> In the same way as we have Etherscan for solidity "Publish Your Source Code"we need to have Etherscan, "Publish Your Circom Code", or even "Publish Your Stark", "Cairo Precode", or whatever the original source language is. And then it would compile and it would actually verify that the on-chain verification key matches. These are things that totally can be done. And I hope someone does them in the hackathon tomorrow.
+> In the same way as we have Etherscan for solidity "Publish Your Source Code" we need to have Etherscan, "Publish Your Circom Code", or even "Publish Your Stark", "Cairo Precode", or whatever the original source language is. And then it would compile and it would actually verify that the on-chain verification key matches. These are things that totally can be done. And I hope someone does them in the hackathon tomorrow.
 
-*Vitalik Buterin March 26, 2024* [Source](https://www.defideveloper.news/vitalik-ethtaipei-interview/)
+*Vitalik Buterin March 26, 2024* [Source](https://web.archive.org/web/20240525102411/https://www.defideveloper.news/vitalik-ethtaipei-interview/)
 
-## TODO
+Circuitscan explorer of on-chain circuit verifiers
 
-- [x] support more than just latest circom version
-- [ ] add support for noir verifiers too
-- [x] ddos protection! / account system (sign in with ethereum)
-- [x] [api for programmatic verification](https://github.com/circuitscan/cli) / command in circomkit fo ci
-- [x] testing on circuit verifiers in the wild
+Circuit developers can use the CLI to compile circuits on a cloud machine with a simple command (with up to 512 GB RAM)
+
+dApp users can check the safety of the application and make proofs as needed
+
+* [Documentation](https://circuitscan.readthedocs.io/)
+* [Telegram group](https://t.me/circuitscan)
+* [Circuitscan CLI](https://github.com/circuitscan/cli)
+
+## Repository Map
+
+This repository contains the frontend, server (compares on-chain Solidity source against Solidity output by the compilation pipeline along with other administrative functions), and CloudFormation templates necessary for [hosting Circuitscan on AWS](https://circuitscan.readthedocs.io/en/latest/hosting.html).
+
+For issues related to compiling Circom files, see the [circom-pipeline repo](https://github.com/circuitscan/circom-pipeline)
+
+To create new compilation pipelines, see the [circuitscan-pipeline-runner repo](https://github.com/circuitscan/circuitscan-pipeline-runner)
+
+For issues related to the documentation, see the [docs repo](https://github.com/circuitscan/docs)
 
 ## Installation
 
@@ -48,7 +62,20 @@ $ yarn build:server
 # Run server lambda in docker container
 $ yarn dev:server
 
+# Update .env to VITE_SERVER_URL=/api to use server running in local Docker
+
+# Server tests are run on your local machine
+$ cd server/
+$ yarn
+$ yarn test
+
 ```
+
+## Contributions
+
+Contributions to Circuitscan are welcome! Please make an issue or PR.
+
+Special thanks to [Ethereum Foundation Ecosystem Support Program](https://esp.ethereum.foundation/) for supporting phase one of Circuitscan development!
 
 ## License
 
