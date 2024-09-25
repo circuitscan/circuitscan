@@ -28,7 +28,11 @@ export function Circomspect({ pkgName, analyzedCode, setAnalyzedCode }) {
         const file = list[i];
         const result = await loadListOrFile(`build/${pkgName}/source.zip`, file.fileName);
         file.content = result;
-        file.templates = extractTemplates(result);
+        const tplFull = extractTemplates(result);
+        const tplNoComments = extractTemplates(removeComments(result));
+        // Templates must have the comments to be found in the full source
+        // but templates that are commented out fully should not be analyzed
+        file.templates = tplFull.filter(tpl => tplNoComments.find(x => x.name === tpl.name));
         for(let j = 0; j < file.templates.length; j++) {
           const template = file.templates[j];
           template.index = allTemplates.length;
@@ -87,6 +91,10 @@ export function Circomspect({ pkgName, analyzedCode, setAnalyzedCode }) {
       className={`${clsIconA} px-2 text-sm inline-block text-nowrap opacity-50`}
     >Powered by Circomspect</a>
   </div>);
+}
+
+function removeComments(value) {
+  return value.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
 }
 
 function extractTemplates(circomSource) {
