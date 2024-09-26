@@ -45,7 +45,7 @@ export function Layout() {
   return (<>
       <Toaster />
       <a
-        href="https://github.com/circuitscan"
+        href="https://medium.com/@circuitscan/introducing-circuitscan-your-all-in-one-solution-for-circom-circuit-compilation-and-verification-f0539042e42c"
         target="_blank"
         rel="noopener"
         className={`
@@ -54,7 +54,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Under Construction
+        Introducing Circuitscan: Your All-in-One Solution for Circom Circuit Compilation and Verification
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
