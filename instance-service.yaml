@@ -360,6 +360,8 @@ Resources:
                 REGION="${process.env.AWS_REGION}"
                 echo "[default]\nregion = $REGION" > /home/ubuntu/.aws/config
                 echo "[default]\naws_access_key_id = ${process.env.INSTANCE_ACCESS_ID}\naws_secret_access_key = ${process.env.INSTANCE_ACCESS_SECRET}" > /home/ubuntu/.aws/credentials
+                INSTANCE_ID=$(TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
+                echo $INSTANCE_ID > /home/ubuntu/id.txt
 
                 # Load compiler repo
                 git clone ${pipelines[body.payload.pipeline]} /home/ubuntu/app
