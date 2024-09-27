@@ -115,7 +115,7 @@ export default function Address() {
               <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
             </a>}&nbsp;
 
-            {isAddressOnThisChain && data[chainParam].info.circuit && <><a
+            {isAddressOnThisChain && data[chainParam].info.pkgSize && <><a
               href={`${import.meta.env.VITE_BLOB_URL}build/${data[chainParam].pkg_name}/pkg.zip`}
               target="_blank"
               rel="noopener"
