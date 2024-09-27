@@ -115,10 +115,12 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
             {...{pkgName}}
             rootFile={info.circuit.file + '.circom'}
             sourceSize={info.sourceSize}
+            showCircomspect={true}
           />,
         'Build Output': () =>
           <BuildStatus
             requestId={info.requestId}
+            isCircom={true}
           />,
       }} />
     </div>}

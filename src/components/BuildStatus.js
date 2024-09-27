@@ -7,7 +7,7 @@ import CodeBlock from './CodeBlock.js';
 import useDarkMode from './useDarkMode.js';
 import { formatDuration, formatBytes } from '../utils.js';
 
-export function BuildStatus({ requestId }) {
+export function BuildStatus({ requestId, isCircom }) {
   const darkMode = useDarkMode();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,34 +19,42 @@ export function BuildStatus({ requestId }) {
         const result = await fetch(`${import.meta.env.VITE_BLOB_URL}status/${requestId}.json`);
         const data = await result.json();
         const convert = new Convert();
-        setData({
-          shell: convert.toHtml(data
-            .filter(x => x.msg.startsWith('Circomkit'))
-            .map(x => x.data.msg)
-            .join('\n\n')),
-          duration: data[data.length - 1].time.toFixed(2),
-          memory: data
-            .filter(x => ['Circom memory usage', 'Memory Usage Update'].indexOf(x.msg) !== -1)
-            .map(x => ({
-              memory: typeof x.data.memoryUsage !== 'undefined' ? x.data.memoryUsage * 1024 :
-                typeof x.data.memory !== 'undefined' ? x.data.memory.rss : 0,
-              disk: x.data.disk ? Number((
-                x.data.disk.find(x => x.Mounted === '/tmp')
-                // Some compiles won't have a specific /tmp mount
-                || x.data.disk.find(x => x.Mounted === '/')).Used) * 1024 : 0,
-              time: x.time,
-            }))
-            .reduce((out, cur, index) => {
-              const lastItem = out[out.length - 1];
-              if(index > 0 && cur.disk === 0 && lastItem.disk > 0) {
-                // Add Circom memory usage to the other memory value if they're interleaved
-                lastItem.memory += cur.memory;
-              } else {
-                out.push(cur);
-              }
-              return out;
-            }, []),
-        });
+        if(isCircom) {
+          setData({
+            shell: convert.toHtml(data
+              .filter(x => x.msg.startsWith('Circomkit'))
+              .map(x => x.data.msg)
+              .join('\n\n')),
+            duration: data[data.length - 1].time.toFixed(2),
+            memory: data
+              .filter(x => ['Circom memory usage', 'Memory Usage Update'].indexOf(x.msg) !== -1)
+              .map(x => ({
+                memory: typeof x.data.memoryUsage !== 'undefined' ? x.data.memoryUsage * 1024 :
+                  typeof x.data.memory !== 'undefined' ? x.data.memory.rss : 0,
+                disk: x.data.disk ? Number((
+                  x.data.disk.find(x => x.Mounted === '/tmp')
+                  // Some compiles won't have a specific /tmp mount
+                  || x.data.disk.find(x => x.Mounted === '/')).Used) * 1024 : 0,
+                time: x.time,
+              }))
+              .reduce((out, cur, index) => {
+                const lastItem = out[out.length - 1];
+                if(index > 0 && cur.disk === 0 && lastItem.disk > 0) {
+                  // Add Circom memory usage to the other memory value if they're interleaved
+                  lastItem.memory += cur.memory;
+                } else {
+                  out.push(cur);
+                }
+                return out;
+              }, []),
+          });
+        } else {
+          setData({
+            shell: convert.toHtml(data.map(x => x.msg).join('\n\n')),
+            memory: [],
+            duration: data[data.length - 1].time.toFixed(2),
+          });
+        }
       } catch (err) {
         console.error(err);
         setError(err);

@@ -12,7 +12,7 @@ import {
   formatBytes,
 } from '../utils.js';
 
-export function SourceTree({ pkgName, rootFile, sourceSize }) {
+export function SourceTree({ pkgName, rootFile, sourceSize, showCircomspect }) {
   const [list, setList] = useState(null);
   const [source, setSource] = useState(null);
   const [curFile, setCurFile] = useState(rootFile);
@@ -84,7 +84,7 @@ export function SourceTree({ pkgName, rootFile, sourceSize }) {
     >
       <ArrowDownOnSquareStackIcon className="inline h-5 w-5" />
     </a>
-    <Circomspect {...{pkgName, analyzedCode, setAnalyzedCode}} />
+    {showCircomspect && <Circomspect {...{pkgName, analyzedCode, setAnalyzedCode}} />}
 
     {analyzedCode && !loadingFile && typeof source === 'object'
       ? <CodeBlock code={source.content} language="javascript" annotated={source} />

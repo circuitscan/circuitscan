@@ -15,6 +15,7 @@ import bsUrls from 'blockscout-urls';
 import Card from '../components/Card.js';
 import {CircomDetails} from '../components/CircomDetails.js';
 import {Groth16MultiDetails} from '../components/Groth16MultiDetails.js';
+import {NoirDetails} from '../components/NoirDetails.js';
 import {clsIconA} from '../components/Layout.js';
 import {
   findChain,
@@ -190,6 +191,12 @@ export default function Address() {
           : data[chainParam].info.type === 'groth16multi' ?
             <Groth16MultiDetails
               info={data[chainParam].info}
+              />
+          : data[chainParam].info.type === 'noir' ?
+            <NoirDetails
+              pkgName={data[chainParam].pkg_name}
+              info={data[chainParam].info}
+              {...{chainParam, address}}
               />
           : <Card>
               <p>Invalid details!</p>

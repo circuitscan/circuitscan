@@ -1,5 +1,6 @@
 import {verifyCircom} from './verifyCircom.js';
 import {verifyCircomMulti} from './verifyCircomMulti.js';
+import {verifyNoir} from './verifyNoir.js';
 import {generateApiKey, removeApiKey, listApiKey} from './apiKeys.js';
 import {storeSolcOutput, storeDeployedAddress} from './browserDeploy.js';
 import {storeGithubHash} from './githubLink.js';
@@ -23,6 +24,8 @@ export async function handler(event) {
         return await verifyCircom(event);
       case 'verifyCircomMulti':
         return await verifyCircomMulti(event);
+      case 'verifyNoir':
+        return await verifyNoir(event);
       case 'listApiKey':
         return await listApiKey(event);
       case 'removeApiKey':
