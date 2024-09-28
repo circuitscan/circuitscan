@@ -4,7 +4,11 @@ import {clsIconA} from './Layout.js';
 import Card from './Card.js';
 import {SourceTree} from './SourceTree.js';
 import {BuildStatus} from './BuildStatus.js';
+import {NoirProofMaker} from './NoirProofMaker.js';
 import Tabs from './Tabs.js';
+import {
+  loadListOrFile,
+} from '../utils.js';
 
 export function NoirDetails({ info, pkgName, chainParam, address }) {
   const [data, setData] = useState(null);
@@ -14,8 +18,9 @@ export function NoirDetails({ info, pkgName, chainParam, address }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        // Load data for the proof generator?
-        setData(true);
+        const source = await loadListOrFile(`build/${pkgName}/source.zip`, 'src/main.nr');
+        const mainArgs = extractMainArguments(source);
+        setData(mainArgs);
       } catch (error) {
         console.error(error);
         setError(error);
@@ -46,7 +51,10 @@ export function NoirDetails({ info, pkgName, chainParam, address }) {
           </dl>
         </Card>
         <Card fullWidth={true}>
-          NYI: Noir proof generator
+          <NoirProofMaker
+            mainArgs={data}
+            {...{info, pkgName, chainParam, address}}
+          />
         </Card>
       </div>
 
@@ -66,4 +74,35 @@ export function NoirDetails({ info, pkgName, chainParam, address }) {
   </>);
 }
 
+function extractMainArguments(sourceCode) {
+    // Step 1: Match the function signature of the main function using regex
+    const mainFunctionRegex = /fn\s+main\s*\(([^)]*)\)/;
+    const match = sourceCode.match(mainFunctionRegex);
 
+    // Step 2: If no match found, return an empty array
+    if (!match) {
+        return [];
+    }
+
+    // Step 3: Extract the argument part inside the parentheses
+    const argsString = match[1].trim();
+
+    // Step 4: Split the arguments by comma to get each argument string
+    const argsArray = argsString.split(',').map(arg => arg.trim());
+
+    // Step 5: Extract argument names and check if they are public
+    const argInfo = argsArray.map(arg => {
+        // Separate name and type (and check for 'pub' in the type)
+        const [name, type] = arg.split(':').map(part => part.trim());
+
+        // Check if the type contains 'pub'
+        const isPublic = type.startsWith('pub');
+
+        return {
+            name,
+            isPublic
+        };
+    });
+
+    return argInfo;
+}

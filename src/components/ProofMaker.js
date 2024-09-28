@@ -15,8 +15,6 @@ import {clsButton, clsInput, clsIconA} from './Layout.js';
 import {
   findChain,
   verifierABI,
-  joinPaths,
-  getImports,
   inputTemplate,
   loadListOrFile,
   formatBytes,
