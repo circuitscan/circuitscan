@@ -14,7 +14,7 @@
     "firebase": "10.13.0",
     "snarkjs-groth16-multi-verifier": "0.0.3",
     "unique-names-generator": "^4.7.1",
-    "verified-solidity-source": "0.0.4",
+    "verified-solidity-source": "0.0.5",
     "viem": "2.x"
   }
 }
