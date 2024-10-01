@@ -12,7 +12,7 @@ import {
   formatBytes,
 } from '../utils.js';
 
-export function Groth16MultiDetails({ info }) {
+export function Groth16MultiDetails({ info, chainParam }) {
   const [selectedVerifier, setSelectedVerifier] = useState('0');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +23,9 @@ export function Groth16MultiDetails({ info }) {
     const loadAsyncData = async () => {
       try {
         setProgress(0);
+        setError(null);
+        setLoading(true);
+        setSelectedVerifier('0');
         const verifiers = [];
         for(let verifier of info.payload.verifiers) {
           const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${verifier.address}.json`);
@@ -46,7 +49,7 @@ export function Groth16MultiDetails({ info }) {
     };
 
     loadAsyncData();
-  }, [info]);
+  }, [info, chainParam]);
   return (<>
     {error ? <>
       <Card>

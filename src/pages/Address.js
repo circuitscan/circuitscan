@@ -53,7 +53,7 @@ export default function Address() {
     };
 
     isValid && loadAsyncData();
-  }, []);
+  }, [address]);
   const isAddressOnAnyChain = data && Object.keys(data).length > 0;
   let deployedChain;
   let isAddressOnThisChain = false;
@@ -191,6 +191,7 @@ export default function Address() {
           : data[chainParam].info.type === 'groth16multi' ?
             <Groth16MultiDetails
               info={data[chainParam].info}
+              {...{chainParam, address}}
               />
           : data[chainParam].info.type === 'noir' ?
             <NoirDetails

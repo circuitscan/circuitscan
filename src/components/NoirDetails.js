@@ -18,6 +18,8 @@ export function NoirDetails({ info, pkgName, chainParam, address }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const source = await loadListOrFile(`build/${pkgName}/source.zip`, 'src/main.nr');
         const mainArgs = extractMainArguments(source);
         setData(mainArgs);
@@ -30,7 +32,7 @@ export function NoirDetails({ info, pkgName, chainParam, address }) {
     };
 
     loadAsyncData();
-  }, []);
+  }, [info, chainParam]);
 
   return (<>
     {loading && <Card>Loading circuit details...</Card>}

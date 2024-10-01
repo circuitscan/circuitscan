@@ -28,6 +28,8 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         // Find the template in the sources somewhere
         let tryFiles = [ info.circuit.file + '.circom' ];
         let source, template, i = 0;
@@ -51,13 +53,13 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
     };
 
     loadAsyncData();
-  }, []);
+  }, [info, chainParam]);
 
   // TODO display optimization level
   return (<>
-    {loading && <Card>Loading circuit details...</Card>}
-    {error && <Card>Error loading circuit details!</Card>}
-    {data && <div>
+    {loading ? <Card>Loading circuit details...</Card> :
+      error ? <Card>Error loading circuit details!</Card> :
+      data && <div>
 
       <div className="flex flex-col sm:flex-row">
         <Card fullWidth={true}>
