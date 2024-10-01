@@ -50,12 +50,6 @@ export function Home() {
             Telegram
           </button>
         </a>
-        <a href="https://docs.google.com/spreadsheets/d/1r22REpvo1jRHmiWcIwlbdT8QI7kh8DBKz21RHFhDz0E/edit?usp=sharing" target="_blank" rel="noopener">
-          <button className={clsButton}>
-            <MapIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
-            Roadmap
-          </button>
-        </a>
         <Link to="/manage-api-key">
           <button className={clsButton}>
             <KeyIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
