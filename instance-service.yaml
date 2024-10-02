@@ -351,7 +351,7 @@ Resources:
 
                 # Run pipeline-specific installation script
                 if [ -f "setup.sh" ]; then
-                  bash setup.sh
+                  source setup.sh > ../setup-stdout.txt 2> ../setup-stderr.txt
                 fi
 
                 echo "export AWS_REGION=$REGION" >> /home/ec2-user/.bashrc
