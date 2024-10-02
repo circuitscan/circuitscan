@@ -325,7 +325,7 @@ Resources:
             }));
 
             await ec2Client.send(new RunInstancesCommand({
-              ImageId: 'ami-05134c8ef96964280', // ubuntu 24.04 us-west-2
+              ImageId: 'ami-01cd4de4363ab6ee8', // amazon linux 23 us-west-2
               InstanceType: body.payload.instanceType,
               IamInstanceProfile: {
                 Name: process.env.INSTANCE_PROFILE,
@@ -333,64 +333,41 @@ Resources:
               MinCount: 1,
               MaxCount: 1,
               UserData: Buffer.from(`#!/bin/bash
-                apt-get update -y
-
-                # Install dependencies
-                apt-get install -y git build-essential curl unzip
-
-                # Install NVM (Node Version Manager)
-                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-
-                # Source the NVM script so it's available in the current shell session
-                export NVM_DIR="$HOME/.nvm"
-                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-                # Install the latest LTS version of Node.js using NVM
-                nvm install --lts
-
-                # Set the default Node.js version to the latest LTS
-                nvm alias default lts/*
-
-                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                unzip awscliv2.zip
-                ./aws/install
-
-                curl https://${process.env.BLOB_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/payload/${body.payload.requestId}.json > /home/ubuntu/event.json
-                mkdir /home/ubuntu/.aws
-                REGION="${process.env.AWS_REGION}"
-                echo "[default]\nregion = $REGION" > /home/ubuntu/.aws/config
-                echo "[default]\naws_access_key_id = ${process.env.INSTANCE_ACCESS_ID}\naws_secret_access_key = ${process.env.INSTANCE_ACCESS_SECRET}" > /home/ubuntu/.aws/credentials
+                yum install nodejs -y
+                yum install git -y
+                yum install -y aws-cli
+                curl https://${process.env.BLOB_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/payload/${body.payload.requestId}.json > /home/ec2-user/event.json
+                mkdir /home/ec2-user/.aws
+                REGION=$(ec2-metadata -z | awk '{print $2}' | sed 's/[a-z]$//')
+                echo "[default]\nregion = $REGION" > /home/ec2-user/.aws/config
+                echo "[default]\naws_access_key_id = ${process.env.INSTANCE_ACCESS_ID}\naws_secret_access_key = ${process.env.INSTANCE_ACCESS_SECRET}" > /home/ec2-user/.aws/credentials
                 INSTANCE_ID=$(TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
-                echo $INSTANCE_ID > /home/ubuntu/id.txt
+                echo $INSTANCE_ID > /home/ec2-user/id.txt
 
                 # Load compiler repo
-                git clone ${pipelines[body.payload.pipeline]} /home/ubuntu/app
-                cd /home/ubuntu/app
+                git clone ${pipelines[body.payload.pipeline]} /home/ec2-user/app
+                cd /home/ec2-user/app
                 npm install --production
 
                 # Run pipeline-specific installation script
                 if [ -f "setup.sh" ]; then
-                  bash setup.sh > ../setup-stdout.txt 2> ../setup-stderr.txt
+                  bash setup.sh
                 fi
 
-                echo "export AWS_REGION=$REGION" >> /home/ubuntu/.bashrc
-                echo "export BLOB_BUCKET=${process.env.BLOB_BUCKET}" >> /home/ubuntu/.bashrc
-                echo "export AWS_ACCESS_KEY_ID=${process.env.INSTANCE_ACCESS_ID}" >> /home/ubuntu/.bashrc
-                echo "export AWS_SECRET_ACCESS_KEY=${process.env.INSTANCE_ACCESS_SECRET}" >> /home/ubuntu/.bashrc
-                source /home/ubuntu/.bashrc
+                echo "export AWS_REGION=$REGION" >> /home/ec2-user/.bashrc
+                echo "export BLOB_BUCKET=${process.env.BLOB_BUCKET}" >> /home/ec2-user/.bashrc
+                echo "export AWS_ACCESS_KEY_ID=${process.env.INSTANCE_ACCESS_ID}" >> /home/ec2-user/.bashrc
+                echo "export AWS_SECRET_ACCESS_KEY=${process.env.INSTANCE_ACCESS_SECRET}" >> /home/ec2-user/.bashrc
+                source /home/ec2-user/.bashrc
 
                 # Run the job
-                AWS_REGION=$REGION \
-                BLOB_BUCKET=${process.env.BLOB_BUCKET} \
-                AWS_ACCESS_KEY_ID=${process.env.INSTANCE_ACCESS_ID} \
-                AWS_SECRET_ACCESS_KEY=${process.env.INSTANCE_ACCESS_SECRET} \
-                node --max-old-space-size=1655300 node_modules/circuitscan-pipeline-runner/wrapper.js /home/ubuntu/event.json > ../stdout.txt 2> ../stderr.txt
+                node --max-old-space-size=1655300 node_modules/circuitscan-pipeline-runner/wrapper.js /home/ec2-user/event.json > ../stdout.txt 2> ../stderr.txt
 
                 # Report stderr/stdout to indicate process completion (success or failure)
                 aws s3 cp ../stdout.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/stdout.txt
                 aws s3 cp ../stderr.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/stderr.txt
                 # Self-destruct
-                sudo -u ubuntu aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+                sudo -u ec2-user aws ec2 terminate-instances --instance-ids $INSTANCE_ID
               `).toString('base64'),
               KeyName: process.env.SSH_KEY_NAME,
               SecurityGroupIds: [process.env.SECURITY_GROUP],
