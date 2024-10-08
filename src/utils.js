@@ -132,14 +132,22 @@ export function joinPaths(basePath, relativePath) {
 // Thanks ChatGPT
 export function extractCircomTemplate(sourceCode, templateName) {
     // Find the starting index of the template
-    const templateStartRegex = new RegExp(`template ${templateName}\\s*\\(([^)]*)\\)\\s*{`, 'g');
+    const templateStartRegex = new RegExp(`template\\s+${templateName}\\s*(\\([^)]*\\))?\\s*{`, 'g');
     const startMatch = templateStartRegex.exec(sourceCode);
     if (!startMatch) {
         return null; // Template not found
     }
 
-    // Extracting the parameters
-    const params = startMatch[1].trim().split(',').map(param => param.trim()).filter(param => param.length > 0);
+    // Extracting the parameters (if present)
+    let params = [];
+    if (startMatch[1]) { // If parentheses and parameters exist
+        params = startMatch[1]
+            .replace(/[()]/g, '') // Remove parentheses
+            .split(',')
+            .map(param => param.trim())
+            .filter(param => param.length > 0);
+    }
+
 
     // Start parsing after the initial match
     let index = startMatch.index + startMatch[0].length - 1; // -1 to include the opening '{'
@@ -211,10 +219,13 @@ export async function fetchInfo(pkgName) {
 
 export function inputTemplate(details, params) {
   const out = {};
-  const paramNames = details.tplArgs[1]
-    .split(',').map(x=>x.trim()).filter(x=>!!x);
-  if(params.length !== paramNames.length)
-    throw new Error('param_length_mismatch');
+  let paramNames = [];
+  if(details.tplArgs) {
+    paramNames = details.tplArgs[1]
+      .split(',').map(x=>x.trim()).filter(x=>!!x);
+    if(params.length !== paramNames.length)
+      throw new Error('param_length_mismatch');
+  }
 
   const paramObj = paramNames
     .reduce((out, cur, index) => {
