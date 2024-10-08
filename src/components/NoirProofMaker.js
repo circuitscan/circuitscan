@@ -128,7 +128,7 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
       <p className="text-l font-bold pb-1">
         Proof Input Signals
         &nbsp;<a
-          href={`https://circuitscan.readthedocs.io/en/latest/build-artifacts.html#in-browser-proof-generator`}
+          href={`https://circuitscan.readthedocs.io/en/latest/build-artifacts-noir.html#in-browser-proof-generator`}
           target="_blank"
           rel="noopener"
           className={`${clsIconA}`}

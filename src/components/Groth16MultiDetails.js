@@ -79,7 +79,7 @@ export function Groth16MultiDetails({ info, chainParam }) {
             className={`${clsIconA}`}
           >{info.payload.modifier}</a>)</>}
           &nbsp;<a
-            href={`https://circuitscan.readthedocs.io/en/latest/usage.html#verify-a-circom-groth16-multi-verifier-already-deployed-on-chain`}
+            href={`https://circuitscan.readthedocs.io/en/latest/usage-circom.html#verify-a-circom-groth16-multi-verifier-already-deployed-on-chain`}
             target="_blank"
             rel="noopener"
             className={`${clsIconA}`}

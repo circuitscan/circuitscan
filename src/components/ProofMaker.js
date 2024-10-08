@@ -134,7 +134,7 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
       <p className="text-l font-bold pb-1">
         Proof Input Signals
         &nbsp;<a
-          href={`https://circuitscan.readthedocs.io/en/latest/build-artifacts.html#in-browser-proof-generator`}
+          href={`https://circuitscan.readthedocs.io/en/latest/build-artifacts-circom.html#in-browser-proof-generator`}
           target="_blank"
           rel="noopener"
           className={`${clsIconA}`}
