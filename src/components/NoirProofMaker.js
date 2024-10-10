@@ -8,9 +8,6 @@ import {
   QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-// TODO support multiple version of noirjs
-import { Noir } from '@noir-lang/noir_js';
-import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
 
 import {clsButton, clsInput, clsIconA} from './Layout.js';
 import {
@@ -19,6 +16,31 @@ import {
   loadListOrFile,
   formatBytes,
 } from '../utils.js';
+
+async function noirLoader(version) {
+  // Vite won't pick up dynamic import names
+  let noir, bb;
+  switch(version) {
+    case '0.31.0':
+      noir = import('noir_js-v0.31.0');
+      bb = import('barretenberg-v0.31.0');
+      break;
+    case '0.32.0':
+      noir = import('noir_js-v0.32.0');
+      bb = import('barretenberg-v0.32.0');
+      break;
+    case '0.33.0':
+      noir = import('noir_js-v0.33.0');
+      bb = import('barretenberg-v0.33.0');
+      break;
+    case '0.34.0':
+      noir = import('noir_js-v0.34.0');
+      bb = import('barretenberg-v0.34.0');
+      break;
+  }
+  if(!noir) throw new Error('Noir v0.31.0 - v0.34.0 only!');
+  return { noir: await noir, bb: await bb };
+}
 
 export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs }) {
   const [proofOutput, setProofOutput] = useState();
@@ -44,8 +66,8 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
             x.fileName === `target/${info.nargoToml.package.name}.json`
           ).reduce((out, cur) => out + cur.compressedSize, 0),
         });
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
         setError(err);
       } finally {
         setLoading(false);
@@ -56,11 +78,18 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
   }, [info, pkgName]);
 
   async function downloadPkey() {
-    const circuitPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
-      `target/${info.nargoToml.package.name}.json`, false, setProgress1);
-    const circuit = await circuitPromise;
+    try {
+      const noirImports = await noirLoader(info.nargoVersion);
 
-    setPkeyData({ circuit });
+      const circuitPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
+        `target/${info.nargoToml.package.name}.json`, false, setProgress1);
+      const circuit = await circuitPromise;
+
+      setPkeyData({ circuit, ...noirImports });
+    } catch(error) {
+      console.error(error);
+      toast.error(err);
+    }
   }
 
   async function prove() {
@@ -80,9 +109,9 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
     toast.loading('Generating proof...');
     try {
       const circuit = JSON.parse(pkeyData.circuit);
-      const noir = new Noir(circuit);
+      const noir = new pkeyData.noir.Noir(circuit);
       const witness = await noir.execute(inputs);
-      const bb = new BarretenbergBackend(circuit);
+      const bb = new pkeyData.bb.BarretenbergBackend(circuit);
       proof = await bb.generateProof(witness.witness);
       proof.proofHex = '0x' + uint8ArrayToHexString(proof.proof);
       setProofOutput(proof);
