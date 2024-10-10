@@ -8,8 +8,6 @@ import {
   QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-// TODO support multiple version of snarkjs
-import * as snarkjs from 'snarkjs';
 
 import {clsButton, clsInput, clsIconA} from './Layout.js';
 import {
@@ -19,6 +17,20 @@ import {
   loadListOrFile,
   formatBytes,
 } from '../utils.js';
+
+function snarkjsLoader(version) {
+  // Vite won't pick up dynamic import names
+  switch(version) {
+    // XXX These earlier versions cause a vite build failure
+    // case '0.6.11': return import('snarkjs-v0.6.11');
+    // case '0.7.0': return import('snarkjs-v0.7.0');
+    // case '0.7.1': return import('snarkjs-v0.7.1');
+    case '0.7.2': return import('snarkjs-v0.7.2');
+    case '0.7.3': return import('snarkjs-v0.7.3');
+    case '0.7.4': return import('snarkjs-v0.7.4');
+  }
+  throw new Error('SnarkJS v0.7.2 - v0.7.4 only!');
+}
 
 export function ProofMaker({ info, pkgName, chainParam, address, template }) {
   const [proofOutput, setProofOutput] = useState();
@@ -46,9 +58,9 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
             x.fileName === `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`
           ).reduce((out, cur) => out + cur.compressedSize, 0),
         });
-      } catch (err) {
-        console.error(err);
-        setError(err);
+      } catch (error) {
+        console.error(error);
+        setError(error);
       } finally {
         setLoading(false);
       }
@@ -58,15 +70,22 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
   }, [info, pkgName]);
 
   async function downloadPkey() {
-    // Load simultaneously
-    const finalZkeyPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
-      `build/verify_circuit/${info.protocol}_pkey.zkey`, true, setProgress1);
-    const wasmPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
-      `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`, true, setProgress2);
-    const finalZkey = await finalZkeyPromise;
-    const wasm = await wasmPromise;
+    try {
+      // Load snarkjs first to ensure it's a compatible version
+      const snarkjs = await snarkjsLoader(info.snarkjsVersion);
+      // Load simultaneously
+      const finalZkeyPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
+        `build/verify_circuit/${info.protocol}_pkey.zkey`, true, setProgress1);
+      const wasmPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
+        `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`, true, setProgress2);
+      const finalZkey = await finalZkeyPromise;
+      const wasm = await wasmPromise;
 
-    setPkeyData({ finalZkey, wasm });
+      setPkeyData({ finalZkey, wasm, snarkjs });
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message);
+    }
   }
 
   async function prove() {
@@ -86,7 +105,7 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
     toast.loading('Generating proof...');
     let proof;
     try {
-      proof = await snarkjs[info.protocol].fullProve(inputs, pkeyData.wasm, pkeyData.finalZkey);
+      proof = await pkeyData.snarkjs[info.protocol].fullProve(inputs, pkeyData.wasm, pkeyData.finalZkey);
     } catch(error) {
       toast.dismiss();
       toast.error(error.message);
@@ -273,4 +292,3 @@ function groth16Calldata(proof) {
     `[${withQuotes(pC).join(', ')}]`,
   ].join(',');
 }
-
