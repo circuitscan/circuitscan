@@ -52,6 +52,7 @@ Resources:
                   - 'ses:SendEmail'
                   - 'ses:SendRawEmail'
                   - 'ec2:RunInstances'
+                  - 'ec2:TerminateInstances'
                 Resource: '*'
               - Effect: Allow
                 Action:
@@ -74,6 +75,10 @@ Resources:
     Properties:
       GroupDescription: Allow only ssh access to the instance
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
@@ -341,8 +346,17 @@ Resources:
                 REGION=$(ec2-metadata -z | awk '{print $2}' | sed 's/[a-z]$//')
                 echo "[default]\nregion = $REGION" > /home/ec2-user/.aws/config
                 echo "[default]\naws_access_key_id = ${process.env.INSTANCE_ACCESS_ID}\naws_secret_access_key = ${process.env.INSTANCE_ACCESS_SECRET}" > /home/ec2-user/.aws/credentials
-                INSTANCE_ID=$(TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
+
+                IMDS_TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\`
+                INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
+                PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" -s http://169.254.169.254/latest/meta-data/public-ipv4)
                 echo $INSTANCE_ID > /home/ec2-user/id.txt
+                echo $PUBLIC_IP > /home/ec2-user/ip.txt
+                aws s3 cp /home/ec2-user/id.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/id.txt
+                aws s3 cp /home/ec2-user/ip.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/ip.txt
+
+                # Healthcheck server
+                node -e "require('http').createServer((_, res) => { res.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'}); res.end('OK'); }).listen(3000)" &
 
                 # Load compiler repo
                 git clone ${pipelines[body.payload.pipeline]} /home/ec2-user/app
@@ -395,8 +409,112 @@ Resources:
       Principal: '*'
       FunctionUrlAuthType: 'NONE'
 
+  StopLambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-StopInstances"
+      Handler: 'index.handler'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: 'nodejs20.x'
+      Timeout: 60
+      Environment:
+        Variables:
+          BLOB_BUCKET: !Ref AssocBucket
+          APIKEY_BUCKET: !Ref APIKeyBucketName
+
+      Code:
+        ZipFile: |
+          const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+          const { EC2Client, TerminateInstancesCommand } = require("@aws-sdk/client-ec2");
+
+          const s3Client = new S3Client({ region: process.env.AWS_REGION });
+          const ec2Client = new EC2Client({ region: process.env.AWS_REGION });
+
+          function streamToString(stream) {
+              return new Promise((resolve, reject) => {
+                  const chunks = [];
+                  stream.on('data', (chunk) => chunks.push(chunk));
+                  stream.on('error', reject);
+                  stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+              });
+          }
+
+          exports.handler = async (event) => {
+            console.log(event);
+            const body = JSON.parse(event.body);
+            if(!body.payload) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Missing payload',
+              }),
+            };
+            if(!(/^[0-9a-zA-Z]{40}$/.test(body.payload.requestId))) return {
+              statusCode: 400,
+              body: JSON.stringify({
+                errorType: 'bad_request',
+                errorMessage: 'Invalid payload.requestId',
+              }),
+            };
+
+            try {
+              const instanceId = (await streamToString((await s3Client.send(new GetObjectCommand({
+                Bucket: process.env.BLOB_BUCKET,
+                Key: `instance/${body.payload.requestId}/id.txt`,
+              }))).Body)).trim();
+
+              const apiKeyUses = JSON.parse(await streamToString((await s3Client.send(new GetObjectCommand({
+                Bucket: process.env.APIKEY_BUCKET,
+                Key: `uses/${body.apiKey}.json`,
+              }))).Body));
+
+              if(apiKeyUses.inactive)
+                throw new Error('inactive_api_key');
+
+              if(apiKeyUses.requests.indexOf(body.payload.requestId) === -1)
+                throw new Error('incorrect_api_key');
+
+              await ec2Client.send(new TerminateInstancesCommand({
+                InstanceIds: [instanceId],
+              }));
+
+            } catch(error) {
+              return {
+                statusCode: 400,
+                body: JSON.stringify({
+                  errorType: 'bad_request',
+                  errorMessage: error.message
+                }),
+              };
+            }
+
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                status: 'ok',
+              }),
+            };
+          };
+
+  StopLambdaFunctionUrl:
+    Type: 'AWS::Lambda::Url'
+    Properties:
+      AuthType: 'NONE'
+      TargetFunctionArn: !GetAtt StopLambdaFunction.Arn
+
+  StopLambdaUrlInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunctionUrl'
+      FunctionName: !Ref StopLambdaFunction
+      Principal: '*'
+      FunctionUrlAuthType: 'NONE'
+
 Outputs:
   LambdaFunctionUrl:
     Description: 'URL of the Lambda Function'
     Value: !GetAtt LambdaFunctionUrl.FunctionUrl
+  StopLambdaFunctionUrl:
+    Description: 'URL of the Stop Lambda Function'
+    Value: !GetAtt StopLambdaFunctionUrl.FunctionUrl
 
