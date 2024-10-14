@@ -6,11 +6,15 @@ import {storeSolcOutput, storeDeployedAddress} from './browserDeploy.js';
 import {storeGithubHash} from './githubLink.js';
 import {insertDirectoryContract} from './directory.js';
 import {updateP0tion} from './p0tion.js';
+import {retireNonResponding} from './retireNonResponding.js';
 
 export async function handler(event) {
   // Triggered by timer
   if(event.source === 'aws.events') {
-    await updateP0tion();
+    await Promise.allSettled([
+      updateP0tion(),
+      retireNonResponding(),
+    ]);
     return;
   }
 

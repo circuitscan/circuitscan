@@ -86,6 +86,8 @@ Resources:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
+                  - "ec2:TerminateInstances"
+                  - "ec2:DescribeInstances"
                 Resource: "*"
               - Effect: Allow
                 Action:
