@@ -107,7 +107,7 @@ Resources:
       Code:
         ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:${ECRImageTag}"
       MemorySize: 256
-      Timeout: 30
+      Timeout: 90
       Environment:
         Variables:
           ASSOC_BUCKET: !Ref AssocBucket
