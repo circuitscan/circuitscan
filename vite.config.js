@@ -17,6 +17,31 @@ export default defineConfig({
   },
   plugins: [
     {
+      name: 'rewrite-bbjs-dynamic-imports',
+      transform(code, id) {
+        if (/@aztec\/bb.js/.test(code)) {
+          // Rewrite dynamic imports to point to correct version
+          return {
+            code: code.replace(/import\(['"`]@aztec\/bb.js['"`]\)/g, () => {
+                const noirVersionMatch = id.match(/barretenberg-v([0-9.]+)/);
+                if(!noirVersionMatch) return null;
+                // Cannot use string manipulation on import module name!
+                switch(noirVersionMatch[1]) {
+                  case '0.34.0': return `import('bbjs-v0.34.0')`;
+                  case '0.33.0': return `import('bbjs-v0.33.0')`;
+                  case '0.32.0': return `import('bbjs-v0.32.0')`;
+                  case '0.31.0': return `import('bbjs-v0.31.0')`;
+                }
+                return null;
+              }
+            ),
+            map: null,
+          };
+        }
+        return null;
+      },
+    },
+    {
       name: 'treat-js-files-as-jsx',
       async transform(code, id) {
         if (!id.match(/src\/.*\.js$/)) return null
@@ -69,7 +94,6 @@ export default defineConfig({
       target: 'esnext', // Ensures esbuild is using the latest JavaScript features
     },
     rollupOptions: {
-      // TODO @aztec/bb.js is 62MB?!
       external: ['@aztec/bb.js']
     },
   },

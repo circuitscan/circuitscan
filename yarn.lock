@@ -2348,6 +2348,46 @@ base64-js@^1.3.1:
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
 
+"bbjs-v0.31.0@npm:@aztec/bb.js@0.41.0":
+  version "0.41.0"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.41.0.tgz#4753b36bf7873918d7676cf3b1b4356674a5bff0"
+  integrity sha512-Uqez8YRu+nlPdXfrqeEBF/Mz3OhhK39zXL4gzN/pGhp4FlEkeTLpCx7etHXz6aodyjri6lQCv219tGXG2IAQoA==
+  dependencies:
+    comlink "^4.4.1"
+    commander "^10.0.1"
+    debug "^4.3.4"
+    tslib "^2.4.0"
+
+"bbjs-v0.32.0@npm:@aztec/bb.js@0.46.1":
+  version "0.46.1"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.46.1.tgz#8d6f3bd47683a5f633e8e39a313254287ed9b7f9"
+  integrity sha512-SDagbw+jLLRVEPvE5ZQlU1VVvOG7YXw4HEC0c7zdPtdehN58m35ejhrAnC8zKg9gSTF6UeoyqdeXdWd72w0wFw==
+  dependencies:
+    comlink "^4.4.1"
+    commander "^10.0.1"
+    debug "^4.3.4"
+    tslib "^2.4.0"
+
+"bbjs-v0.33.0@npm:@aztec/bb.js@0.47.1":
+  version "0.47.1"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.47.1.tgz#12eef70be6df816af9122448fdafffcaf59eef2e"
+  integrity sha512-3SmRF+suvNZkheCWGU7jH/reEHXkAjMo7q5u/xoLFL0Rn/1HZQN0W6o6Sd3QUoopCwVWQIJ66YwalaRaslP41Q==
+  dependencies:
+    comlink "^4.4.1"
+    commander "^10.0.1"
+    debug "^4.3.4"
+    tslib "^2.4.0"
+
+"bbjs-v0.34.0@npm:@aztec/bb.js@0.55.0":
+  version "0.55.0"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.55.0.tgz#86788670170f2437c049419d2e1c58a51eb56e49"
+  integrity sha512-hdSn5qba/OVyDAPuNBxpF+nFodcv+lK16YPIqkgaaNJ/6hURSLXClbkfnXNg7egwmnvrBQrJb5dVuaoydm8y6w==
+  dependencies:
+    comlink "^4.4.1"
+    commander "^10.0.1"
+    debug "^4.3.4"
+    tslib "^2.4.0"
+
 bfj@^7.0.2:
   version "7.1.0"
   resolved "https://registry.yarnpkg.com/bfj/-/bfj-7.1.0.tgz#c5177d522103f9040e1b12980fe8c38cf41d3f8b"

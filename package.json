@@ -7,11 +7,11 @@
   "scripts": {
     "todo": "bash -c \"grep -rn 'TODO' --exclude-dir={node_modules,build,cache,lib,out} --exclude={*.min*,*.swp,package.json,solc} *\"",
     "dev": "vite",
-    "build:frontend": "vite build",
+    "build:frontend": "npx --node-options='--max-old-space-size=16240' vite build",
     "build:server": "docker build -t circuitscan_server server/",
     "dev:server": "docker run -p 9000:8080 --env-file ./.env --rm circuitscan_server",
     "deploy:server": "aws ecr get-login-password --profile cs --region us-west-2 | docker login --username AWS --password-stdin 654654229232.dkr.ecr.us-west-2.amazonaws.com && docker tag circuitscan_server:latest 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_main:latest && docker push 654654229232.dkr.ecr.us-west-2.amazonaws.com/circuitscan_main:latest",
-    "deploy:frontend": "rm -rf dist/ && vite build && aws s3 sync --profile cs dist/ s3://circuitscan.org/"
+    "deploy:frontend": "rm -rf dist/ && npx --node-options='--max-old-space-size=16240' vite build && aws s3 sync --profile cs dist/ s3://circuitscan.org/"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -31,6 +31,10 @@
     "noir_js-v0.32.0": "npm:@noir-lang/noir_js@0.32.0",
     "noir_js-v0.33.0": "npm:@noir-lang/noir_js@0.33.0",
     "noir_js-v0.34.0": "npm:@noir-lang/noir_js@0.34.0",
+    "bbjs-v0.34.0": "npm:@aztec/bb.js@0.55.0",
+    "bbjs-v0.33.0": "npm:@aztec/bb.js@0.47.1",
+    "bbjs-v0.32.0": "npm:@aztec/bb.js@0.46.1",
+    "bbjs-v0.31.0": "npm:@aztec/bb.js@0.41.0",
     "@rainbow-me/rainbowkit": "^2.1.4",
     "@tanstack/react-query": "^5.29.0",
     "ansi-to-html": "^0.7.2",
