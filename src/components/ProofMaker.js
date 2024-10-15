@@ -105,8 +105,15 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
     toast.loading('Generating proof...');
     let proof;
     try {
-      proof = await pkeyData.snarkjs[info.protocol].fullProve(inputs, pkeyData.wasm, pkeyData.finalZkey);
+      // XXX: snarkjs fullProve fails on wasm from circom 2.2.0?
+      // This witness calculator is from a build by circom 2.2.0
+      // and works on circuits compiled with earlier versions
+      const wc = (await import('../utils/witness_calculator.js')).default;
+      const witnessCalculator = await wc(pkeyData.wasm);
+      const witness = await witnessCalculator.calculateWTNSBin(inputs, 0);
+      proof = await pkeyData.snarkjs[info.protocol].prove(pkeyData.finalZkey, witness, console);
     } catch(error) {
+      console.error(error);
       toast.dismiss();
       toast.error(error.message);
       return;
