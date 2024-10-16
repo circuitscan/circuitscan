@@ -33,11 +33,13 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
         // Find the template in the sources somewhere
         let tryFiles = [ info.circuit.file + '.circom' ];
         let source, template, i = 0;
+        const sources = [];
         while(!template) {
           const tryFile = tryFiles[i++];
           if(!tryFile) throw new Error('Template not found!');
           source = await loadListOrFile(`build/${pkgName}/source.zip`, tryFile);
-          template = extractCircomTemplate(source, info.circuit.template);
+          sources.push(source);
+          template = extractCircomTemplate(sources, info.circuit.template);
           if(!template) {
             const imports = getImports(source).map(path => joinPaths(tryFile, path));
             tryFiles = [ ...tryFiles, ...imports ];

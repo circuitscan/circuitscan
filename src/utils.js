@@ -130,90 +130,97 @@ export function joinPaths(basePath, relativePath) {
 }
 
 // Thanks ChatGPT
-export function extractCircomTemplate(sourceCode, templateName, typeName = 'template') {
-    // Find the starting index of the template
-    const templateStartRegex = new RegExp(`${typeName}\\s+${templateName}\\s*(\\([^)]*\\))?\\s*{`, 'g');
-    const startMatch = templateStartRegex.exec(sourceCode);
-    if (!startMatch) {
-        return null; // Template not found
-    }
-
-    // Extracting the parameters (if present)
-    let params = [];
-    if (startMatch[1]) { // If parentheses and parameters exist
-        params = startMatch[1]
-            .replace(/[()]/g, '') // Remove parentheses
-            .split(',')
-            .map(param => param.trim())
-            .filter(param => param.length > 0);
-    }
-
-
-    // Start parsing after the initial match
-    let index = startMatch.index + startMatch[0].length - 1; // -1 to include the opening '{'
-    let braceDepth = 1; // Start inside the first opening brace
-    let templateEnd = index;
-    let codeBlock = startMatch[0];
-
-    // Iterate through the source code starting after the opening brace to find the matching closing brace
-    while (braceDepth > 0 && templateEnd < sourceCode.length) {
-        templateEnd++;
-        codeBlock += sourceCode[templateEnd];
-        if (sourceCode[templateEnd] === '{') {
-            braceDepth++;
-        } else if (sourceCode[templateEnd] === '}') {
-            braceDepth--;
+export function extractCircomTemplate(sources, templateName, typeName = 'template') {
+    // Allow specifying single file or multi-file
+    if(typeof sources === 'string') sources = [sources];
+    for(let sourceCode of sources) {
+        // Find the starting index of the template
+        const templateStartRegex = new RegExp(`${typeName}\\s+${templateName}\\s*(\\([^)]*\\))?\\s*{`, 'g');
+        const startMatch = templateStartRegex.exec(sourceCode);
+        if (!startMatch) {
+            continue; // Template not found
         }
-    }
 
-    // Check if we've correctly closed all braces
-    if (braceDepth !== 0) {
-        return null; // Error in template syntax or unmatched braces
-    }
-
-    // Extract the complete template block
-    const template = sourceCode.substring(startMatch.index, templateEnd + 1);
-
-    // Extract signal inputs and buses
-    const inputSignalRegex = typeName === 'template'
-      ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) input ([\w\s,\[\]*\/+%-]+);/g
-      : typeName === 'bus'
-      ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) ([\w\s,\[\]*\/+%-]+);/g
-      : null;
-    let signalMatch;
-    let signalInputs = [];
-
-    if(inputSignalRegex) {
-        while ((signalMatch = inputSignalRegex.exec(template)) !== null) {
-            // Split signals on comma, then clean up and include any array declarations
-            signalInputs = signalInputs.concat(signalMatch[2].split(',').map(signal => {
-                // Remove extra spaces and include array sizes
-                let trimmedSignal = signal.trim();
-                const out = { name: trimmedSignal };
-                let arrayMatch = trimmedSignal.match(/(\w+)\s*\[(.+)\]/);
-                if (arrayMatch) {
-                    out.name = arrayMatch[1];
-                    out.arraySize = arrayMatch[2].trim();
-                }
-                if(signalMatch[1] !== 'signal') {
-                    const busSplit = signalMatch[1].split('(');
-                    // It's a bus
-                    out.busName = busSplit[0];
-                    out.busParams = busSplit[1].slice(0, -1).split(',');
-                    // TODO search for buses in other source files, test nested buses
-                    out.busDetails = extractCircomTemplate(sourceCode, out.busName, 'bus');
-                }
-                return out;
-            }));
+        // Extracting the parameters (if present)
+        let params = [];
+        if (startMatch[1]) { // If parentheses and parameters exist
+            params = startMatch[1]
+                .replace(/[()]/g, '') // Remove parentheses
+                .split(',')
+                .map(param => param.trim())
+                .filter(param => param.length > 0);
         }
-    }
 
-    // Return the extracted template, parameters, and signal inputs
-    return {
-        template: template,
-        parameters: params,
-        signalInputs: signalInputs,
-    };
+
+        // Start parsing after the initial match
+        let index = startMatch.index + startMatch[0].length - 1; // -1 to include the opening '{'
+        let braceDepth = 1; // Start inside the first opening brace
+        let templateEnd = index;
+        let codeBlock = startMatch[0];
+
+        // Iterate through the source code starting after the opening brace to find the matching closing brace
+        while (braceDepth > 0 && templateEnd < sourceCode.length) {
+            templateEnd++;
+            codeBlock += sourceCode[templateEnd];
+            if (sourceCode[templateEnd] === '{') {
+                braceDepth++;
+            } else if (sourceCode[templateEnd] === '}') {
+                braceDepth--;
+            }
+        }
+
+        // Check if we've correctly closed all braces
+        if (braceDepth !== 0) {
+            return null; // Error in template syntax or unmatched braces
+        }
+
+        // Extract the complete template block
+        const template = sourceCode.substring(startMatch.index, templateEnd + 1);
+
+        // Extract signal inputs and buses
+        const inputSignalRegex = typeName === 'template'
+          ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) input ([\w\s,\[\]*\/+%-]+);/g
+          : typeName === 'bus'
+          ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) ([\w\s,\[\]*\/+%-]+);/g
+          : null;
+        let signalMatch;
+        let signalInputs = [];
+
+        if(inputSignalRegex) {
+            while ((signalMatch = inputSignalRegex.exec(template)) !== null) {
+                // Split signals on comma, then clean up and include any array declarations
+                const signals = signalMatch[2].split(',');
+                for(let signal of signals) {
+                    // Remove extra spaces and include array sizes
+                    let trimmedSignal = signal.trim();
+                    const out = { name: trimmedSignal };
+                    let arrayMatch = trimmedSignal.match(/(\w+)\s*\[(.+)\]/);
+                    if (arrayMatch) {
+                        out.name = arrayMatch[1];
+                        out.arraySize = arrayMatch[2].trim();
+                    }
+                    if(signalMatch[1] !== 'signal') {
+                        const busSplit = signalMatch[1].split('(');
+                        // It's a bus
+                        out.busName = busSplit[0];
+                        out.busParams = busSplit[1].slice(0, -1).split(',');
+                        out.busDetails = extractCircomTemplate(sources, out.busName, 'bus');
+                        // Exit function and add more imported files
+                        if(!out.busDetails) return null;
+                    }
+                    signalInputs.push(out);
+                }
+            }
+        }
+
+        // Return the extracted template, parameters, and signal inputs
+        return {
+            template: template,
+            parameters: params,
+            signalInputs: signalInputs,
+        };
+    }
+    return null;
 }
 
 export async function p0tionDetails(finalZkeyUrl) {
@@ -230,7 +237,7 @@ export async function fetchInfo(pkgName) {
   return data;
 }
 
-export function inputTemplate(details, params) {
+export function inputTemplate(details, params, startParam = {}) {
   const out = {};
 
   if(params.length !== details.parameters.length)
@@ -238,14 +245,14 @@ export function inputTemplate(details, params) {
 
   const paramObj = details.parameters
     .reduce((out, cur, index) => {
-      out[cur] = params[index];
+      if(!(cur in out)) out[cur] = params[index];
       return out;
-    }, {});
+    }, startParam);
   for(let signal of details.signalInputs) {
     out[signal.name] = signal.arraySize
       ? makeArray(evaluateExpression(signal.arraySize, paramObj), 1)
       : signal.busName && signal.busDetails
-      ? inputTemplate(signal.busDetails, signal.busParams)
+      ? inputTemplate(signal.busDetails, signal.busParams, paramObj)
       : 1; // dummy value
   }
   return out;
