@@ -7,6 +7,7 @@ import {generateSHA256Hash} from '../utils.js';
 import {clsInput, clsIconA} from './Layout.js';
 import {AnnotatedText} from './AnnotatedText.js';
 import {PopupDialog} from './PopupDialog.js';
+import CopyLink from './CopyLink.js';
 
 const CodeBlock = ({ code, language, annotated }) => {
   useEffect(() => {
@@ -18,6 +19,7 @@ const CodeBlock = ({ code, language, annotated }) => {
 
   return (<>
     <GithubLink {...{code}} />
+    <CopyLink className="float-right mb-2" text={code} hideText={true} />
     <pre
       className="line-numbers w-full bg-slate-100 dark:bg-slate-900 dark:text-white"
     >
