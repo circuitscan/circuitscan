@@ -130,9 +130,9 @@ export function joinPaths(basePath, relativePath) {
 }
 
 // Thanks ChatGPT
-export function extractCircomTemplate(sourceCode, templateName) {
+export function extractCircomTemplate(sourceCode, templateName, typeName = 'template') {
     // Find the starting index of the template
-    const templateStartRegex = new RegExp(`template\\s+${templateName}\\s*(\\([^)]*\\))?\\s*{`, 'g');
+    const templateStartRegex = new RegExp(`${typeName}\\s+${templateName}\\s*(\\([^)]*\\))?\\s*{`, 'g');
     const startMatch = templateStartRegex.exec(sourceCode);
     if (!startMatch) {
         return null; // Template not found
@@ -174,22 +174,38 @@ export function extractCircomTemplate(sourceCode, templateName) {
     // Extract the complete template block
     const template = sourceCode.substring(startMatch.index, templateEnd + 1);
 
-    // Extract signal inputs
-    const inputSignalRegex = /signal input ([\w\s,\[\]*\/+%-]+);/g;
+    // Extract signal inputs and buses
+    const inputSignalRegex = typeName === 'template'
+      ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) input ([\w\s,\[\]*\/+%-]+);/g
+      : typeName === 'bus'
+      ? /(signal|[\S]+\([\w\s,\[\]*\/+%-]+\)) ([\w\s,\[\]*\/+%-]+);/g
+      : null;
     let signalMatch;
     let signalInputs = [];
 
-    while ((signalMatch = inputSignalRegex.exec(template)) !== null) {
-        // Split signals on comma, then clean up and include any array declarations
-        signalInputs = signalInputs.concat(signalMatch[1].split(',').map(signal => {
-            // Remove extra spaces and include array sizes
-            let trimmedSignal = signal.trim();
-            let arrayMatch = trimmedSignal.match(/(\w+)\s*\[(.+)\]/);
-            if (arrayMatch) {
-                return { name: arrayMatch[1], arraySize: arrayMatch[2].trim() };
-            }
-            return { name: trimmedSignal };
-        }));
+    if(inputSignalRegex) {
+        while ((signalMatch = inputSignalRegex.exec(template)) !== null) {
+            // Split signals on comma, then clean up and include any array declarations
+            signalInputs = signalInputs.concat(signalMatch[2].split(',').map(signal => {
+                // Remove extra spaces and include array sizes
+                let trimmedSignal = signal.trim();
+                const out = { name: trimmedSignal };
+                let arrayMatch = trimmedSignal.match(/(\w+)\s*\[(.+)\]/);
+                if (arrayMatch) {
+                    out.name = arrayMatch[1];
+                    out.arraySize = arrayMatch[2].trim();
+                }
+                if(signalMatch[1] !== 'signal') {
+                    const busSplit = signalMatch[1].split('(');
+                    // It's a bus
+                    out.busName = busSplit[0];
+                    out.busParams = busSplit[1].slice(0, -1).split(',');
+                    // TODO search for buses in other source files, test nested buses
+                    out.busDetails = extractCircomTemplate(sourceCode, out.busName, 'bus');
+                }
+                return out;
+            }));
+        }
     }
 
     // Return the extracted template, parameters, and signal inputs
@@ -197,9 +213,6 @@ export function extractCircomTemplate(sourceCode, templateName) {
         template: template,
         parameters: params,
         signalInputs: signalInputs,
-        tplArgs: template.match(
-          new RegExp(`template\\s+${templateName}\\((.*?)\\)\\s*\\{`)
-        ),
     };
 }
 
@@ -219,15 +232,11 @@ export async function fetchInfo(pkgName) {
 
 export function inputTemplate(details, params) {
   const out = {};
-  let paramNames = [];
-  if(details.tplArgs) {
-    paramNames = details.tplArgs[1]
-      .split(',').map(x=>x.trim()).filter(x=>!!x);
-    if(params.length !== paramNames.length)
-      throw new Error('param_length_mismatch');
-  }
 
-  const paramObj = paramNames
+  if(params.length !== details.parameters.length)
+    throw new Error('param_length_mismatch');
+
+  const paramObj = details.parameters
     .reduce((out, cur, index) => {
       out[cur] = params[index];
       return out;
@@ -235,6 +244,8 @@ export function inputTemplate(details, params) {
   for(let signal of details.signalInputs) {
     out[signal.name] = signal.arraySize
       ? makeArray(evaluateExpression(signal.arraySize, paramObj), 1)
+      : signal.busName && signal.busDetails
+      ? inputTemplate(signal.busDetails, signal.busParams)
       : 1; // dummy value
   }
   return out;
