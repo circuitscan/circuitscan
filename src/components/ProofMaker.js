@@ -28,8 +28,9 @@ function snarkjsLoader(version) {
     case '0.7.2': return import('snarkjs-v0.7.2');
     case '0.7.3': return import('snarkjs-v0.7.3');
     case '0.7.4': return import('snarkjs-v0.7.4');
+    case '0.7.5': return import('snarkjs-v0.7.5');
   }
-  throw new Error('SnarkJS v0.7.2 - v0.7.4 only!');
+  throw new Error('SnarkJS v0.7.2 - v0.7.5 only!');
 }
 
 export function ProofMaker({ info, pkgName, chainParam, address, template }) {
