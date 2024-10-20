@@ -42,7 +42,8 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
           template = extractCircomTemplate(sources, info.circuit.template);
           if(!template) {
             const imports = getImports(source).map(path => joinPaths(tryFile, path));
-            tryFiles = [ ...tryFiles, ...imports ];
+            // Filter through a Set to prevent infinite loops
+            tryFiles = [...new Set([ ...tryFiles, ...imports ])];
           }
         }
         setData(template);

@@ -33,6 +33,10 @@ export function Router() {
               element: <DynamicPageLoader pageName="ApiKey" />,
             },
             {
+              path: "verify",
+              element: <DynamicPageLoader pageName="Verify" />,
+            },
+            {
               path: "*",
               element: <ErrorPage />,
             },
