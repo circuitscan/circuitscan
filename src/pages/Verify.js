@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import JSZip from "jszip";
 import { toast } from 'react-hot-toast';
 import {
@@ -10,6 +12,8 @@ import {clsButton, clsInput, clsIconA} from '../components/Layout.js';
 import Card from '../components/Card.js';
 import FileDropZone from '../components/FileDropZone.js';
 import Wizard from '../components/Wizard.js';
+import useLocalStorageState from '../components/useLocalStorageState.js';
+import GenerateKey from '../components/GenerateKey.js';
 import * as circom from '../components/CircomCompile.js';
 
 const MAX_SOURCE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -33,6 +37,7 @@ export default function VerifyPage({}) {
   const [payload, setPayload] = useState(null);
   const [instanceSize, setInstanceSize] = useState(() => Object.values(INSTANCE_SIZES)[0]);
   const payloadRef = useRef();
+  const [apiKey, setApiKey] = useLocalStorageState('cs-apikey', '');
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -42,8 +47,15 @@ export default function VerifyPage({}) {
   }
 
   return (<Card>
+    <Helmet>
+      <title>Circuitscan - Verify Circuit</title>
+    </Helmet>
     <Wizard
-      currentStep={circuit.type ? 1 : 0}
+      currentStep={
+        !apiKey ? -1 :
+        circuit.type ? 1 :
+        0
+      }
       steps={[
         {
           title: 'Select Circuit',
@@ -70,7 +82,7 @@ export default function VerifyPage({}) {
                 {circuit.type === 'circom' && <circom.CircuitName {...{circuit}} />}
                 &hellip;
               </h2>
-              <circom.Options {...{circuit, payloadRef, zipContents}} />
+              <circom.Options {...{circuit, zipContents}} ref={payloadRef} />
               <label className="block">
                 <span>Instance Size:</span>
                 <select
@@ -112,6 +124,23 @@ export default function VerifyPage({}) {
         },
       ]}
     />
+    {!apiKey && <>
+      <h2 className={`
+        text-xl pt-6 pb-3
+        border-b border-neutral-300 dark:border-neutral-600
+      `}>Verify Circuit</h2>
+      <p className="py-4">Verify (and optionally deploy) a circuit verifier without installing anything on your computer:</p>
+      <ol className="list-decimal ml-5 pb-7">
+        <li>Submit ZIP file containing circuit source directory</li>
+        <li>Configure compiler settings</li>
+        <li>Verify existing on-chain verifier or deploy anew</li>
+      </ol>
+      <p>To begin, connect your wallet and sign a message to create an API Key.</p>
+      <p>Generating an API Key does not cost anything and does not require any transactions.</p>
+      <GenerateKey
+        className="flex flex-col space-y-4 mt-5 items-center"
+      />
+    </>}
   </Card>);
 }
 
@@ -161,15 +190,9 @@ function ZipFileUploader({setCircuit, zipContents, setZipContents}) {
   return (
     <div>
       <h2 className={`
-        text-xl pt-6 pb-3
+        text-xl pt-6 pb-3 mb-8
         border-b border-neutral-300 dark:border-neutral-600
       `}>Verify Circuit</h2>
-      <p className="py-4">Verify (and optionally deploy) a circuit verifier without installing anything on your computer:</p>
-      <ol className="list-decimal ml-5 pb-7">
-        <li>Submit ZIP file containing circuit source directory</li>
-        <li>Configure compiler settings</li>
-        <li>Verify existing on-chain verifier or deploy</li>
-      </ol>
       <FileDropZone
         acceptFiletype=".zip"
         onFileSelect={handleFileChange}
@@ -182,13 +205,15 @@ function ZipFileUploader({setCircuit, zipContents, setZipContents}) {
       </h3>
       <ul className="text-center">
         {circuits.map((circuit, index) => (
-          <li key={index} className="inline-block">
+          <li key={index} className="inline-block align-top">
             <button
               onClick={() => setCircuit(circuit)}
-              className={clsButton}
+              className={`${clsButton}`}
+              disabled={circuit.error}
             >
               {circuit.type === 'circom' && <circom.CircuitName {...{circuit}} />}
             </button>
+            {circuit.error && <span class="block text-red-500">{circuit.error}</span>}
           </li>
         ))}
       </ul>

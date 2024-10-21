@@ -38,6 +38,12 @@ export function Home() {
             Blog
           </button>
         </a>
+        <Link to="/verify">
+          <button className={clsButton}>
+            <CodeBracketSquareIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
+            Verify
+          </button>
+        </Link>
         <a href="https://github.com/circuitscan/cli" target="_blank" rel="noopener">
           <button className={clsButton}>
             <CodeBracketSquareIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />

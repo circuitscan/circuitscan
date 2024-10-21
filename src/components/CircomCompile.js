@@ -43,7 +43,7 @@ export function CircuitName({circuit}) {
   );
 }
 
-export const Options = forwardRef(function({circuit, payloadRef, zipContents }) {
+export const Options = forwardRef(function({circuit, zipContents }, payloadRef) {
   const [circomVersion, setCircomVersion] = useState(CIRCOM_VERSIONS[0]);
   const [snarkjsVersion, setSnarkjsVersion] = useState(SNARKJS_VERSIONS[0]);
   const [protocol, setProtocol] = useState('plonk');
@@ -210,6 +210,12 @@ export function parse(fileContent, filename, zipContents) {
     let sources = [ filename ];
     let i = 0;
     while(i < sources.length) {
+      if(!(sources[i] in zipContents)) return {
+        type: 'circom',
+        filename,
+        circomMain,
+        error: `Missing ${sources[i]}`,
+      };
       const imports = getImports(zipContents[sources[i]]).map(path => joinPaths(sources[i], path));
       sources = [...new Set([ ...sources, ...imports ])];
       i++;
