@@ -2,16 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import {isAddress} from 'viem';
-import {
-  ArrowTopRightOnSquareIcon,
-  DocumentDuplicateIcon,
-  CheckIcon,
-  XMarkIcon,
-  FolderArrowDownIcon,
-  PencilSquareIcon,
-} from '@heroicons/react/24/outline';
-import bsUrls from 'blockscout-urls';
 
+import AddressHeader from '../components/AddressHeader.js';
 import Card from '../components/Card.js';
 import {CircomDetails} from '../components/CircomDetails.js';
 import {Groth16MultiDetails} from '../components/Groth16MultiDetails.js';
@@ -19,9 +11,7 @@ import {NoirDetails} from '../components/NoirDetails.js';
 import {clsIconA} from '../components/Layout.js';
 import {
   findChain,
-  setClipboard,
   fetchInfo,
-  formatBytes,
 } from '../utils.js';
 
 export default function Address() {
@@ -52,7 +42,7 @@ export default function Address() {
       }
     };
 
-    isValid && loadAsyncData();
+    isAddress(address) && loadAsyncData();
   }, [address]);
   const isAddressOnAnyChain = data && Object.keys(data).length > 0;
   let deployedChain;
@@ -72,71 +62,12 @@ export default function Address() {
       <title>Circuitscan - {!isValid ? 'Invalid Address' : address}</title>
     </Helmet>
     {!isValid ? (<>
-      <p>Invalid Address!</p>
+      <Card>
+        <p>Invalid Address!</p>
+      </Card>
     </>) : (<>
       <div className="px-4 pt-6 pb-0 mx-auto">
-        <h2 className="text-l text-ellipsis overflow-hidden mb-3">
-          {data && <div className="inline-block mr-1 align-middle">
-            <div className={`
-              flex pl-2 pr-3 py-1
-              border rounded-full bg-neutral-200 dark:bg-neutral-900
-              border-neutral-400 dark:border-neutral-600
-              text-sm
-            `}>
-              {isAddressOnThisChain ? <>
-                <CheckIcon className="h-5 w-5 text-blue-500" />
-                <p>Circuit Verified</p>
-              </> : <>
-                <XMarkIcon className="h-5 w-5 text-red-500" />
-                <p>Circuit not verified</p>
-              </>}
-            </div>
-          </div>}
-
-          <span className="mr-1 align-middle">{address}</span>
-
-          <span className="whitespace-nowrap inline-block">
-            <a
-              href={`web3://${address}`}
-              onClick={() => setClipboard(address)}
-              title="Copy Address to Clipboard"
-              className={`${clsIconA} print:hidden`}
-            >
-              <DocumentDuplicateIcon className="inline h-5 w-5" />
-            </a>&nbsp;
-
-            {deployedChain && <a
-              href={`${deployedChain.id in bsUrls ? 'https://' + bsUrls[deployedChain.id] : deployedChain.blockExplorers.default.url}/address/${address}`}
-              target="_blank"
-              rel="noopener"
-              title="View on Block Explorer"
-              className={`${clsIconA} print:hidden`}
-            >
-              <ArrowTopRightOnSquareIcon className="inline h-5 w-5" />
-            </a>}&nbsp;
-
-            {isAddressOnThisChain && data[chainParam].info.pkgSize && <><a
-              href={`${import.meta.env.VITE_BLOB_URL}build/${data[chainParam].pkg_name}/pkg.zip`}
-              target="_blank"
-              rel="noopener"
-              title={`Download Entire Build (${formatBytes(data[chainParam].info.pkgSize)})`}
-              className={`${clsIconA} print:hidden`}
-            >
-              <FolderArrowDownIcon className="inline h-5 w-5" />
-            </a>&nbsp;</>}
-
-            {isAddressOnThisChain && <a
-              href={`https://remix.ethereum.org/address/${address}`}
-              target="_blank"
-              rel="noopener"
-              title="View on Remix IDE"
-              className={`${clsIconA} print:hidden`}
-            >
-              <PencilSquareIcon className="inline h-5 w-5" />
-            </a>}
-          </span>
-
-        </h2>
+        <AddressHeader {...{address, data, deployedChain, isAddressOnThisChain}} />
         {data && <>
           {Object.keys(data).map((chainId) => {
             const chain = findChain(chainId);

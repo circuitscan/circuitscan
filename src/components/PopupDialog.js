@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {clsButton, clsIconA} from './Layout.js';
 
-export function PopupDialog({ linkText, onSubmit, inputRef, children }) {
+export function PopupDialog({ linkText, linkClass, onSubmit, inputRef, children }) {
   const [showForm, setShowForm] = useState(false);
 
   function toggleForm(event) {
@@ -30,12 +30,12 @@ export function PopupDialog({ linkText, onSubmit, inputRef, children }) {
 
   function submitForm(event) {
     event.preventDefault();
-    onSubmit(event, () => setShowForm(false));
+    typeof onSubmit === 'function' && onSubmit(event, () => setShowForm(false));
   }
 
   return (<div className="relative inline-block">
     <button
-      className={`${clsIconA} text-sm text-nowrap inline-block px-2`}
+      className={`${clsIconA} text-sm text-nowrap inline-block px-2 ${linkClass || ''}`}
       onClick={toggleForm}
     >{linkText}</button>
     <dialog open={showForm} className={`
@@ -47,15 +47,15 @@ export function PopupDialog({ linkText, onSubmit, inputRef, children }) {
     `}>
       <form onSubmit={submitForm} className="inline">
         {children}
-        <button
+        {onSubmit && <button
           type="submit"
           className={`${clsButton}`}
-        >Submit</button>
+        >Submit</button>}
         <button
           type="button"
           className={`${clsButton}`}
           onClick={toggleForm}
-        >Cancel</button>
+        >{onSubmit ? 'Cancel' : 'Close'}</button>
       </form>
     </dialog>
   </div>);

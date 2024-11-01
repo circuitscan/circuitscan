@@ -18,10 +18,14 @@ import {
 
 import DarkModeDetector from '../components/DarkModeDetector.js';
 
+import {removeDuplicates} from '../utils.js';
+
+const chainsFixed = removeDuplicates(chains);
+
 const wagmiConfig = getDefaultConfig({
   appName: 'Circuitscan',
   projectId: '3ab784972e6540d0095810e72372cfd1',
-  chains: Object.values(chains),
+  chains: Object.values(chainsFixed),
 });
 
 const queryClient = new QueryClient();

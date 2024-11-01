@@ -19,6 +19,7 @@ import {SourceTree} from './SourceTree.js';
 import {ProofMaker} from './ProofMaker.js';
 import {BuildStatus} from './BuildStatus.js';
 import Tabs from './Tabs.js';
+import {PopupDialog} from './PopupDialog.js';
 
 export function CircomDetails({ info, pkgName, chainParam, address }) {
   const [data, setData] = useState(null);
@@ -105,6 +106,14 @@ export function CircomDetails({ info, pkgName, chainParam, address }) {
               : <span className="italic">None</span>
             }</dd>
           </dl>
+          <PopupDialog
+            linkText="View full details..."
+            linkClass="mt-4"
+          >
+            <pre className="overflow-x-auto language-json">
+              {JSON.stringify(info, null, 2)}
+            </pre>
+          </PopupDialog>
         </Card>
         <Card fullWidth={true}>
           <ProofMaker

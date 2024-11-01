@@ -1,29 +1,63 @@
 import { useEffect, useState } from 'react';
 import Convert from 'ansi-to-html';
 import { LineChart } from '@mui/x-charts/LineChart';
+import {
+  ArrowPathIcon,
+} from '@heroicons/react/24/solid';
 
 import Card from './Card.js';
 import CodeBlock from './CodeBlock.js';
+import {clsIconA} from './Layout.js';
 import useDarkMode from './useDarkMode.js';
 import { formatDuration, formatBytes } from '../utils.js';
 
-export function BuildStatus({ requestId, isCircom }) {
+export function BuildStatus({
+  requestId,
+  isCircom,
+  skipCard,
+  renderOnComplete,
+  customError,
+  doRefresh,
+}) {
   const darkMode = useDarkMode();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [complete, setComplete] = useState(false);
+  const [refreshCounter, setStatusRefreshCounter] = useState(0);
+
+  useEffect(() => {
+    if(!doRefresh || !requestId) return;
+
+    const intervalId = setInterval(() => {
+      setStatusRefreshCounter((val) => val + 1);
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [doRefresh, requestId]);
+
+  useEffect(() => {
+    setData(null);
+    setComplete(false);
+  }, [requestId]);
 
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}status/${requestId}.json`);
+        setLoading(true);
+        setError(null);
+        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}status/${requestId}.json`, {
+          cache: refreshCounter ? 'reload' : undefined
+        });
         const data = await result.json();
+        if(data.find(x => x.msg === 'Complete.')) setComplete(true);
         const convert = new Convert();
         if(isCircom) {
           setData({
+            raw: data,
             shell: convert.toHtml(data
-              .filter(x => x.msg.startsWith('Circomkit'))
-              .map(x => x.data.msg)
+              .filter(x => x.msg !== 'Memory Usage Update' && x.msg !== 'Circom memory usage')
+              .map(x => x.msg.startsWith('Circomkit') ? x.data.msg : x.msg)
               .join('\n\n')),
             duration: data[data.length - 1].time.toFixed(2),
             memory: data
@@ -50,6 +84,7 @@ export function BuildStatus({ requestId, isCircom }) {
           });
         } else {
           setData({
+            raw: data,
             shell: convert.toHtml(data.map(x => x.msg).join('\n\n')),
             memory: [],
             duration: data[data.length - 1].time.toFixed(2),
@@ -63,13 +98,21 @@ export function BuildStatus({ requestId, isCircom }) {
       }
     };
 
-    loadAsyncData();
-  }, [requestId]);
+    requestId && loadAsyncData();
+  }, [requestId, refreshCounter]);
 
-  return (<>
-    {loading && <Card>Loading build status...</Card>}
-    {error && <Card>Error loading build status!</Card>}
-    {data && <Card fullWidth={true}>
+  const rendered = (<>
+    {doRefresh && <button
+      onClick={() => setStatusRefreshCounter(refreshCounter + 1)}
+      className={`${clsIconA} flex inline-block mt-2 leading-4`}
+    >
+      <ArrowPathIcon className={`${loading ? 'animate-spin' :''} h-4 w-4 mr-1`} />
+      Refresh
+    </button>}
+    {loading && !data && <p className="my-4">Loading build status...</p>}
+    {error && (customError || <p className="my-4 text-red-500">Error loading build status!</p>)}
+    {data && <>
+      {complete && renderOnComplete && renderOnComplete(data)}
       {data.memory.length > 0 && <>
         <p className="text-l font-bold">Compilation Duration: {formatDuration(data.duration)}</p>
         <LineChart
@@ -118,6 +161,8 @@ export function BuildStatus({ requestId, isCircom }) {
         `}
         dangerouslySetInnerHTML={{ __html: data.shell }}
         />
-    </Card>}
+    </>}
   </>);
+  if(skipCard) return rendered;
+  return (<Card fullWidth={!!data}>{rendered}</Card>);
 }

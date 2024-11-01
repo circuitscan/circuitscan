@@ -43,7 +43,7 @@ export function CircuitName({circuit}) {
   );
 }
 
-export const Options = forwardRef(function({circuit, zipContents }, payloadRef) {
+export const Options = forwardRef(function({circuit, zipContents}, payloadRef) {
   const [circomVersion, setCircomVersion] = useState(CIRCOM_VERSIONS[0]);
   const [snarkjsVersion, setSnarkjsVersion] = useState(SNARKJS_VERSIONS[0]);
   const [protocol, setProtocol] = useState('plonk');
@@ -56,15 +56,15 @@ export const Options = forwardRef(function({circuit, zipContents }, payloadRef) 
     serializeState: () => ({
       pipeline: 'circom',
       files: circuit.sources.reduce((out, cur) => {
-        out[cur] = { code: zipContents[cur] };
+        out[cur] = { code: zipContents[cur].replace(circuit.circomMain.full, '') };
         return out;
       }, {}),
-      finalZkey: finalZKey || undefined,
+      finalZkey: protocol === 'groth16' ? finalZKey || undefined : undefined,
       snarkjsVersion,
       circomPath: `circom-v${circomVersion}`,
       optimization,
       protocol,
-      ptauSize: ptauUrl || undefined,
+      ptauSize: protocol === 'groth16' ? ptauUrl || undefined : undefined,
       prime,
       circuit: {
         file: circuit.filename.slice(0, -7), // remove .circom

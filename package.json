@@ -49,8 +49,10 @@
     "snarkjs-v0.7.3": "npm:snarkjs@0.7.3",
     "snarkjs-v0.7.4": "npm:snarkjs@0.7.4",
     "snarkjs-v0.7.5": "npm:snarkjs@0.7.5",
+    "toml": "3.0.0",
     "viem": "2.19.4",
-    "wagmi": "^2.12.5"
+    "wagmi": "^2.12.5",
+    "web-solc": "^0.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

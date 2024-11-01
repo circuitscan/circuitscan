@@ -18,24 +18,23 @@
 }
 
 /* Prism.js styles */
-#address code[class*="language-"],
-#address pre[class*="language-"] {
+code[class*="language-"],
+pre[class*="language-"] {
   background: var(--prism-bg);
   color: var(--prism-color);
   text-shadow: var(--prism-text-shadow);
-  /* Apply other variable-based styles */
 }
 
-#address code .token.operator {
+code .token.operator {
   background: none;
 }
 @media (prefers-color-scheme: dark) {
-  #address .MuiChartsAxis-line,
-  #address .MuiChartsAxis-tick {
-    stroke: #eee;
+  .MuiChartsAxis-line,
+  .MuiChartsAxis-tick {
+    stroke: #eee !important;
   }
-  #address .MuiChartsAxis-tickLabel {
-    fill: #eee;
+  .MuiChartsAxis-tickLabel {
+    fill: #eee !important;
   }
 }
 

@@ -77,6 +77,7 @@ export function formatDuration(seconds) {
 }
 
 export function formatBytes(bytes, decimals = 2) {
+    if (isNaN(bytes)) return 'Unknown Size';
     if (bytes === 0) return '0 Bytes';
 
     const k = 1024;

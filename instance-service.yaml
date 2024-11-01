@@ -20,9 +20,13 @@ Parameters:
     Description: Comma separated list of instance types (no spaces)
     Default: t3.medium,t3.large,r7i.large,r7i.xlarge,r7i.2xlarge,r7i.4xlarge,r7i.8xlarge,r7i.12xlarge,r7i.16xlarge
   AdminEmail:
-    Description: Email to receive start/stop notifications (must be verified as sender in SES)
+    Description: Email to receive start notifications (must be verified as sender in SES)
     Type: String
     Default: "notify@circuitscan.org"
+  EmailSubject:
+    Description: On instance start notifications
+    Type: String
+    Default: "Circuitscan Instance Invoked"
   CloneUrls:
     Description: Source code repos
     Type: String
@@ -149,6 +153,7 @@ Resources:
       Environment:
         Variables:
           ADMIN_EMAIL: !Ref AdminEmail
+          EMAIL_SUBJECT: !Ref EmailSubject
           BLOB_BUCKET: !Ref AssocBucket
           SSH_KEY_NAME: !Ref KeyName
           SECURITY_GROUP: !Ref InstanceSecurityGroup
@@ -241,7 +246,7 @@ Resources:
               },
               Message: {
                 Subject: {
-                  Data: `Circuitscan Instance Invoked`,
+                  Data: process.env.EMAIL_SUBJECT,
                 },
                 Body: {
                   Text: {
@@ -321,6 +326,7 @@ Resources:
             await sendEmail({
               requestId: body.payload.requestId,
               instanceType: body.payload.instanceType,
+              pipeline: body.payload.pipeline,
             });
             await s3Client.send(new PutObjectCommand({
               Bucket: process.env.BLOB_BUCKET,
@@ -400,6 +406,13 @@ Resources:
     Properties:
       AuthType: 'NONE'
       TargetFunctionArn: !GetAtt StartStopLambdaFunction.Arn
+      Cors:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - POST
+        AllowHeaders:
+          - '*'
 
   LambdaUrlInvokePermission:
     Type: 'AWS::Lambda::Permission'
@@ -439,6 +452,14 @@ Resources:
               });
           }
 
+          function healthcheckFetch(ip, timeout) {
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('healthcheck_timeout')), timeout)
+            );
+            const fetchPromise = fetch(`http://${ip}:3000`);
+            return Promise.race([fetchPromise, timeoutPromise]);
+          }
+
           exports.handler = async (event) => {
             console.log(event);
             const body = JSON.parse(event.body);
@@ -474,9 +495,17 @@ Resources:
               if(apiKeyUses.requests.indexOf(body.payload.requestId) === -1)
                 throw new Error('incorrect_api_key');
 
-              await ec2Client.send(new TerminateInstancesCommand({
-                InstanceIds: [instanceId],
-              }));
+              if(body.payload.action === 'healthcheck') {
+                const ip = (await streamToString((await s3Client.send(new GetObjectCommand({
+                  Bucket: process.env.BLOB_BUCKET,
+                  Key: `instance/${body.payload.requestId}/ip.txt`,
+                }))).Body)).trim();
+                await healthcheckFetch(ip, 5000);
+              } else {
+                await ec2Client.send(new TerminateInstancesCommand({
+                  InstanceIds: [instanceId],
+                }));
+              }
 
             } catch(error) {
               return {
@@ -501,6 +530,13 @@ Resources:
     Properties:
       AuthType: 'NONE'
       TargetFunctionArn: !GetAtt StopLambdaFunction.Arn
+      Cors:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - POST
+        AllowHeaders:
+          - '*'
 
   StopLambdaUrlInvokePermission:
     Type: 'AWS::Lambda::Permission'
