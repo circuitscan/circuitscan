@@ -25,6 +25,7 @@ export const clsInput = `
 export const clsIconA = `
   hover:text-lightaccent active:text-lightaccent
   dark:hover:text-darkaccent dark:active:text-darkaccent
+  disabled:dark:text-neutral-600 disabled:text-neutral-300
 `;
 
 

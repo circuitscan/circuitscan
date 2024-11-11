@@ -1,3 +1,26 @@
+export const statusFetch = instanceDataFetch.bind(null, 'status');
+const healthcheckFetch = instanceDataFetch.bind(null, 'healthcheck');
+// TODO terminate is not actually required but the CLI doesn't send any action
+export const terminateInstance = instanceDataFetch.bind(null, 'terminate');
+
+async function instanceDataFetch(action, requestId, apiKey) {
+  const event = {payload: {requestId, action}, apiKey};
+  const response = await fetch(import.meta.env.VITE_HEALTHCHECK_URL, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(event),
+  });
+  if (!response.ok && response.status !== 400) {
+    throw new Error('Network response was not ok');
+  }
+  const data = await response.json();
+  const body = 'body' in data ? JSON.parse(data.body) : data;
+  if(!response.ok)
+    throw new Error(body.errorMessage);
+  return body;
+}
 
 export function watchInstance(requestId, apiKey, setInstanceStatus, timeout) {
   return new Promise((resolve, reject) => {
@@ -49,42 +72,6 @@ export function watchInstance(requestId, apiKey, setInstanceStatus, timeout) {
       }
     }, timeout);
   });
-}
-
-async function healthcheckFetch(requestId, apiKey) {
-  const event = {payload: {requestId, action: 'healthcheck'}, apiKey};
-  const response = await fetch(import.meta.env.VITE_HEALTHCHECK_URL, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(event),
-  });
-  if (!response.ok && response.status !== 400) {
-    throw new Error('Network response was not ok');
-  }
-  const data = await response.json();
-  const body = 'body' in data ? JSON.parse(data.body) : data;
-  if(!response.ok)
-    throw new Error(body.errorMessage);
-  return body;
-}
-
-async function terminateInstance(requestId, apiKey) {
-  const event = {payload: {requestId}, apiKey};
-  const response = await fetch(import.meta.env.VITE_HEALTHCHECK_URL, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(event),
-  });
-  if (!response.ok && response.status !== 400) {
-    throw new Error('Network response was not ok');
-  }
-  const data = await response.json();
-  const body = 'body' in data ? JSON.parse(data.body) : data;
-  return body;
 }
 
 async function fetchResult(requestId, pipename) {

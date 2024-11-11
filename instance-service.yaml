@@ -57,6 +57,7 @@ Resources:
                   - 'ses:SendRawEmail'
                   - 'ec2:RunInstances'
                   - 'ec2:TerminateInstances'
+                  - 'ec2:DescribeInstances'
                 Resource: '*'
               - Effect: Allow
                 Action:
@@ -358,11 +359,11 @@ Resources:
                 PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" -s http://169.254.169.254/latest/meta-data/public-ipv4)
                 echo $INSTANCE_ID > /home/ec2-user/id.txt
                 echo $PUBLIC_IP > /home/ec2-user/ip.txt
-                aws s3 cp /home/ec2-user/id.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/id.txt
-                aws s3 cp /home/ec2-user/ip.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/ip.txt
+                aws s3 cp /home/ec2-user/id.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/id.txt &
+                aws s3 cp /home/ec2-user/ip.txt s3://${process.env.BLOB_BUCKET}/instance/${body.payload.requestId}/ip.txt &
 
                 # Healthcheck server
-                node -e "require('http').createServer((_, res) => { res.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'}); res.end('OK'); }).listen(3000)" &
+                node -e "require('http').createServer((_, res) => { res.writeHead(200, {'Content-Type': 'text/plain'}); res.end('OK'); }).listen(3000)" &
 
                 # Load compiler repo
                 git clone ${pipelines[body.payload.pipeline]} /home/ec2-user/app
@@ -429,7 +430,7 @@ Resources:
       Handler: 'index.handler'
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: 'nodejs20.x'
-      Timeout: 60
+      Timeout: 10
       Environment:
         Variables:
           BLOB_BUCKET: !Ref AssocBucket
@@ -438,7 +439,7 @@ Resources:
       Code:
         ZipFile: |
           const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-          const { EC2Client, TerminateInstancesCommand } = require("@aws-sdk/client-ec2");
+          const { EC2Client, TerminateInstancesCommand, DescribeInstancesCommand } = require("@aws-sdk/client-ec2");
 
           const s3Client = new S3Client({ region: process.env.AWS_REGION });
           const ec2Client = new EC2Client({ region: process.env.AWS_REGION });
@@ -501,6 +502,21 @@ Resources:
                   Key: `instance/${body.payload.requestId}/ip.txt`,
                 }))).Body)).trim();
                 await healthcheckFetch(ip, 5000);
+              } else if(body.payload.action === 'status') {
+                const id = (await streamToString((await s3Client.send(new GetObjectCommand({
+                  Bucket: process.env.BLOB_BUCKET,
+                  Key: `instance/${body.payload.requestId}/id.txt`,
+                }))).Body)).trim();
+                const result = await ec2Client.send(new DescribeInstancesCommand({
+                  InstanceIds: [instanceId],
+                }));
+                const instanceStatus = result.Reservations[0].Instances[0].State.Name;
+                return {
+                  statusCode: 200,
+                  body: JSON.stringify({
+                    status: instanceStatus,
+                  }),
+                };
               } else {
                 await ec2Client.send(new TerminateInstancesCommand({
                   InstanceIds: [instanceId],

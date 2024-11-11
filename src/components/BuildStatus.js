@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import Convert from 'ansi-to-html';
+import { toast } from 'react-hot-toast';
 import { LineChart } from '@mui/x-charts/LineChart';
 import {
   ArrowPathIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/solid';
 
 import Card from './Card.js';
@@ -10,9 +12,11 @@ import CodeBlock from './CodeBlock.js';
 import {clsIconA} from './Layout.js';
 import useDarkMode from './useDarkMode.js';
 import { formatDuration, formatBytes } from '../utils.js';
+import { statusFetch, terminateInstance } from '../utils/server.js';
 
 export function BuildStatus({
   requestId,
+  apiKey,
   isCircom,
   skipCard,
   renderOnComplete,
@@ -25,16 +29,26 @@ export function BuildStatus({
   const [error, setError] = useState(null);
   const [complete, setComplete] = useState(false);
   const [refreshCounter, setStatusRefreshCounter] = useState(0);
+  const [instanceStatus, setInstanceStatus] = useState(null);
 
   useEffect(() => {
     if(!doRefresh || !requestId) return;
 
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
       setStatusRefreshCounter((val) => val + 1);
+      try {
+        const status = await statusFetch(requestId, apiKey);
+        if(status.status === 'terminated') {
+          clearInterval(intervalId);
+        }
+        setInstanceStatus(status.status);
+      } catch(error) {
+        setInstanceStatus(null);
+      }
     }, 10000);
 
     return () => clearInterval(intervalId);
-  }, [doRefresh, requestId]);
+  }, [doRefresh, requestId, apiKey]);
 
   useEffect(() => {
     setData(null);
@@ -101,14 +115,38 @@ export function BuildStatus({
     requestId && loadAsyncData();
   }, [requestId, refreshCounter]);
 
+  async function abortCompiling() {
+    toast.loading('Terminating instance...');
+    try {
+      const status = await terminateInstance(requestId, apiKey);
+      console.log(status);
+      toast.dismiss();
+      toast.success('Instance terminated!');
+    } catch(error) {
+      console.log(error);
+      toast.dismiss();
+      toast.error('Error terminating instance!');
+    }
+  }
+
   const rendered = (<>
-    {doRefresh && <button
-      onClick={() => setStatusRefreshCounter(refreshCounter + 1)}
-      className={`${clsIconA} flex inline-block mt-2 leading-4`}
-    >
-      <ArrowPathIcon className={`${loading ? 'animate-spin' :''} h-4 w-4 mr-1`} />
-      Refresh
-    </button>}
+    {doRefresh && <div className="flex flex-row space-x-4">
+      <button
+        onClick={() => setStatusRefreshCounter(refreshCounter + 1)}
+        className={`${clsIconA} flex inline-block mt-2 leading-4`}
+      >
+        <ArrowPathIcon className={`${loading ? 'animate-spin' :''} h-4 w-4 mr-1`} />
+        Refresh
+      </button>
+      <button
+        disabled={instanceStatus !== 'running'}
+        onClick={() => abortCompiling()}
+        className={`${clsIconA} text-red-600 hover:text-red-700 flex inline-block mt-2 leading-4`}
+      >
+        <XCircleIcon className={`h-4 w-4 mr-1`} />
+        Abort
+      </button>
+    </div>}
     {loading && !data && <p className="my-4">Loading build status...</p>}
     {error && (customError || <p className="my-4 text-red-500">Error loading build status!</p>)}
     {data && <>

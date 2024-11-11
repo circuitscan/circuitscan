@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import {
+  ArrowUpOnSquareStackIcon,
   CodeBracketSquareIcon,
   BookOpenIcon,
   MapIcon,
@@ -23,7 +24,7 @@ export function Home() {
       <p className="py-3">
         Circuitscan provides the same safety guarantees to circuit verifier contracts as normal smart contracts receive by verifying their source code on a block explorer: guaranteed access to the application even if their frontend becomes unavailable as well as the ability to review the source code for potential issues.
         <br /><br />
-        Supports all EVM chains. Use the CLI to verify or deploy your circuit verifiers.
+        Supports all EVM chains. <Link to="/verify" className={`${clsIconA} underline underline-offset-2`}>Verify/Deploy in the browser</Link> or use the CLI to verify or deploy your circuit verifiers.
       </p>
       <p className="pt-6">
         <a href="https://circuitscan.readthedocs.io" target="_blank" rel="noopener">
@@ -40,7 +41,7 @@ export function Home() {
         </a>
         <Link to="/verify">
           <button className={clsButton}>
-            <CodeBracketSquareIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
+            <ArrowUpOnSquareStackIcon className="h-9 w-9 text-lightaccent dark:text-darkaccent" />
             Verify
           </button>
         </Link>

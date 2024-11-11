@@ -300,7 +300,7 @@ export default function VerifyPage() {
               </p>
              : null}
             <BuildStatus
-              {...{requestId}}
+              {...{requestId, apiKey}}
               doRefresh={true}
               isCircom={true}
               skipCard={true}
@@ -333,7 +333,7 @@ export default function VerifyPage() {
               <button
                 onClick={() => setPkgName('')}
                 className={`${clsIconA} self-start pt-5`}
-                title="Select a different circuit..."
+                title="Return to previous step..."
                 type="button"
               >
                 <ArrowLeftIcon className="inline h-9 w-9" />
