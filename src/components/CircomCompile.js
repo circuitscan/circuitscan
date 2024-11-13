@@ -64,7 +64,7 @@ export const Options = forwardRef(function({circuit, zipContents}, payloadRef) {
       circomPath: `circom-v${circomVersion}`,
       optimization,
       protocol,
-      ptauSize: protocol === 'groth16' ? ptauUrl || undefined : undefined,
+      ptauSize: ptauUrl || undefined,
       prime,
       circuit: {
         file: circuit.filename.slice(0, -7), // remove .circom
@@ -133,28 +133,28 @@ export const Options = forwardRef(function({circuit, zipContents}, payloadRef) {
           </a>
         </p>
       </label>
-      <label className="block">
-        <span>PTAU File URL:</span>
-        <input
-          value={ptauUrl}
-          onChange={(e) => setPtauUrl(e.target.value)}
-          className={`${clsInput}`}
-          placeholder="Leave blank to use default Hermez PTAU"
-        />
-        <p className="text-sm">
-          Specify the URL of a different PTAU file if not using the default Hermez ceremony
-          &nbsp;<a
-            href={`https://circuitscan.readthedocs.io/en/latest/usage-circom.html#t-ptau`}
-            target="_blank"
-            rel="noopener"
-            className={`${clsIconA}`}
-            title="View documentation..."
-          >
-            <QuestionMarkCircleIcon className="inline h-5 w-5" />
-          </a>
-        </p>
-      </label>
     </>}
+    <label className="block">
+      <span>PTAU File URL:</span>
+      <input
+        value={ptauUrl}
+        onChange={(e) => setPtauUrl(e.target.value)}
+        className={`${clsInput}`}
+        placeholder="Leave blank to use default Hermez PTAU"
+      />
+      <p className="text-sm">
+        Specify the URL of a different PTAU file if not using the default Hermez ceremony
+        &nbsp;<a
+          href={`https://circuitscan.readthedocs.io/en/latest/usage-circom.html#t-ptau`}
+          target="_blank"
+          rel="noopener"
+          className={`${clsIconA}`}
+          title="View documentation..."
+        >
+          <QuestionMarkCircleIcon className="inline h-5 w-5" />
+        </a>
+      </p>
+    </label>
     <label className="block">
       <span>Prime:</span>
       <select
