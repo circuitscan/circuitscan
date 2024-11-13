@@ -121,7 +121,9 @@ export const Options = forwardRef(function({circuit, zipContents}, payloadRef) {
           placeholder="Leave blank to use random entropy"
         />
         <p className="text-sm">
-          Groth16 protocol uses a circuit-specific setup to operate securely. Specify the URL of the final ZKey (proving key) for this circuit
+          Groth16 protocol uses a circuit-specific setup to operate securely.<br />
+          Specify the URL of the final ZKey (proving key) for this circuit.<br />
+          This field is required to verify an already-deployed circuit verifier.
           &nbsp;<a
             href={`https://circuitscan.readthedocs.io/en/latest/usage-circom.html#k-proving-key`}
             target="_blank"
