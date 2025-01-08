@@ -16,7 +16,8 @@ import {
 
 export default function Address() {
   const navigate = useNavigate();
-  const {address, chain: chainParam} = useParams();
+  const {address: addrParam, chain: chainParam} = useParams();
+  const address = String(addrParam || '').toLowerCase();
   const isValid = isAddress(address);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
