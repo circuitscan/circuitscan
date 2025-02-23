@@ -38,7 +38,7 @@ export async function insertDirectoryContract(body) {
   };
 
   try {
-    const assoc = await (await fetch(`${process.env.BLOB_URL}assoc/${body.contractAddress}.json`)).json();
+    const assoc = await (await fetch(`${process.env.BLOB_URL}assoc/${body.contractAddress.toLowerCase()}.json`)).json();
     if(!(body.chainId in assoc)) return {
       statusCode: 400,
       body: JSON.stringify({

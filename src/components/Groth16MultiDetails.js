@@ -28,7 +28,7 @@ export function Groth16MultiDetails({ info, chainParam }) {
         setSelectedVerifier('0');
         const verifiers = [];
         for(let verifier of info.payload.verifiers) {
-          const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${verifier.address}.json`);
+          const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${verifier.address.toLowerCase()}.json`);
           const parsed = await result.json();
           const verifierInfo = await fetchInfo(parsed[verifier.chainId]);
           verifiers.push({

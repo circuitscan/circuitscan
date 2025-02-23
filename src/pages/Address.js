@@ -26,7 +26,7 @@ export default function Address() {
   useEffect(() => {
     const loadAsyncData = async () => {
       try {
-        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${address}.json`);
+        const result = await fetch(`${import.meta.env.VITE_BLOB_URL}assoc/${address.toLowerCase()}.json`);
         const data = await result.json();
         for(let chain of Object.keys(data)) {
           data[chain] = {

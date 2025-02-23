@@ -5,7 +5,7 @@ const s3Client = new S3Client();
 
 export async function saveAssoc(contract, chainId, pkgName) {
   // save pkgName association in s3 blob/assoc/<address>.json {[chainid]: "<pkgname>"}
-  await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${contract}.json`, data => {
+  await transformS3Json(process.env.ASSOC_BUCKET, `assoc/${contract.toLowerCase()}.json`, data => {
     if(chainId in data)
       throw new Error('already_verified');
     data[chainId] = pkgName;
