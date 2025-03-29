@@ -46,7 +46,7 @@ export function Layout() {
   return (<>
       <Toaster />
       <a
-        href="https://medium.com/@circuitscan/introducing-circuitscan-your-all-in-one-solution-for-circom-circuit-compilation-and-verification-f0539042e42c"
+        href="https://explorer.gitcoin.co/#/round/42161/865/13"
         target="_blank"
         rel="noopener"
         className={`
@@ -55,7 +55,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Introducing Circuitscan: Your All-in-One Solution for Circom Circuit Compilation and Verification
+        Please support Circuitscan in Gitcoin 23!
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
