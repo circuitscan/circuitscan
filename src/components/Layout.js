@@ -46,7 +46,7 @@ export function Layout() {
   return (<>
       <Toaster />
       <a
-        href="https://explorer.gitcoin.co/#/round/42161/865/13"
+        href="https://octant.app/project/8/0xa48c718AE6dE6599c5A46Fd6caBff54Def39473a"
         target="_blank"
         rel="noopener"
         className={`
@@ -55,7 +55,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Please support Circuitscan in Gitcoin 23!
+        Circuitscan is participating in Octant Epoch 8 from July 11-25! 🎉
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
