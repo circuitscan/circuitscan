@@ -18,6 +18,9 @@ import {
   formatBytes,
 } from '../utils.js';
 
+// Disable proof maker above this size (1gb)
+const MAX_SIZE = 1000000000;
+
 function snarkjsLoader(version) {
   // Vite won't pick up dynamic import names
   switch(version) {
@@ -52,13 +55,17 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
           template,
           info.circuit.params,
         ), null, 2));
-        const mainPkgList = await loadListOrFile(`build/${pkgName}/pkg.zip`);
-        setPkeySize({
-          size: mainPkgList.filter(x =>
-            x.fileName === `build/verify_circuit/${info.protocol}_pkey.zkey` ||
-            x.fileName === `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`
-          ).reduce((out, cur) => out + cur.compressedSize, 0),
-        });
+        if(info.pkgSize < MAX_SIZE) {
+          const mainPkgList = await loadListOrFile(`build/${pkgName}/pkg.zip`);
+          setPkeySize({
+            size: mainPkgList.filter(x =>
+              x.fileName === `build/verify_circuit/${info.protocol}_pkey.zkey` ||
+              x.fileName === `build/verify_circuit/verify_circuit_js/verify_circuit.wasm`
+            ).reduce((out, cur) => out + cur.compressedSize, 0),
+          });
+        } else {
+          setPkeySize({ size: info.pkgSize });
+        }
       } catch (error) {
         console.error(error);
         setError(error);
@@ -177,14 +184,17 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
       />
       <div className="flex flex-col">
         <button
-          disabled={pkeyData || progress1[1] > 0}
+          disabled={pkeyData || progress1[1] > 0 || info.pkgSize > MAX_SIZE}
           className={`
             ${clsButton}
             mt-3
           `}
           onClick={downloadPkey}
         >
-          Download Final ZKey and WASM&nbsp;
+          {info.pkgSize > MAX_SIZE
+            ? 'Circuit too large! '
+            : 'Download Final ZKey and WASM '
+          }
           <span className="whitespace-nowrap inline-block">
             ({formatBytes(pkeySize.size)})
           </span>
