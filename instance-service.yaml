@@ -381,6 +381,9 @@ Resources:
                 echo "export AWS_SECRET_ACCESS_KEY=${process.env.INSTANCE_ACCESS_SECRET}" >> /home/ec2-user/.bashrc
                 source /home/ec2-user/.bashrc
 
+                # Update max memory allocations for large circuits
+                sysctl -w vm.max_map_count=655300
+
                 # Run the job
                 node --max-old-space-size=1655300 node_modules/circuitscan-pipeline-runner/wrapper.js /home/ec2-user/event.json > ../stdout.txt 2> ../stderr.txt
 
