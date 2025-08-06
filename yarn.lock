@@ -1240,6 +1240,11 @@
   resolved "https://registry.yarnpkg.com/@noir-lang/acvm_js/-/acvm_js-0.50.0.tgz#b423998340b7422e6da94e750516a36cee4f0cba"
   integrity sha512-tmD3eZ8GbkkD001S/YVIrp91sy+XW1ZeVRObio1WgvX9081kJS1xptBglMO4ITzdHOLLuIeaChlUhCgNtwFB9Q==
 
+"@noir-lang/acvm_js@1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@noir-lang/acvm_js/-/acvm_js-1.0.0-beta.3.tgz#013f43e8238aa0e7733514dc055c5ecfdd3b8364"
+  integrity sha512-Dc6g5rJr/x7tKsWvnTbZvjwqI1uiAtvq+NAz5tcLRzUHJw6NAvDXEH5h117h+BfIAhhsHXuPTkDfDB1Gnqp/Bg==
+
 "@noir-lang/noirc_abi@0.31.0":
   version "0.31.0"
   resolved "https://registry.yarnpkg.com/@noir-lang/noirc_abi/-/noirc_abi-0.31.0.tgz#42ee78aab44646d1ff150fb5d8ffb477c6133447"
@@ -1268,6 +1273,13 @@
   dependencies:
     "@noir-lang/types" "0.34.0"
 
+"@noir-lang/noirc_abi@1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@noir-lang/noirc_abi/-/noirc_abi-1.0.0-beta.3.tgz#b5a5233d59e260d66c3e2644d8bc0dff0aec228e"
+  integrity sha512-L6BI64ennatwTUciHqQ14ahUFsgzL41tzghqUELzO7XojasStcWDaSMjlTxca/2pvpWtEJHDtseKe1VZWIIVXQ==
+  dependencies:
+    "@noir-lang/types" "1.0.0-beta.3"
+
 "@noir-lang/types@0.31.0":
   version "0.31.0"
   resolved "https://registry.yarnpkg.com/@noir-lang/types/-/types-0.31.0.tgz#cce1d58fd2decfb5160a84c06a522adf357b6785"
@@ -1287,6 +1299,11 @@
   version "0.34.0"
   resolved "https://registry.yarnpkg.com/@noir-lang/types/-/types-0.34.0.tgz#909d4a170177c7ab5adfeed5dc8660d69825ced2"
   integrity sha512-04A14JMPt5G6/cCD4n59W0DUtAbcN8YByvSJ6gj0VQramd11tWK3ZqhKadnQrzhA0GwEvROd6jvn/blKdHlSXQ==
+
+"@noir-lang/types@1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@noir-lang/types/-/types-1.0.0-beta.3.tgz#0170d3b72c55fde76df65e03b98acb3be6a20f4b"
+  integrity sha512-BPOmf0qDiTn4wH1Lo7mHa67GTQFueIVaDUcUb+N9+ALiXC5nVU8HrzWmx1yvZB64ZiCEy7yPdNEaNrszSrE2fg==
 
 "@parcel/watcher-android-arm64@2.4.1":
   version "2.4.1"
@@ -2392,6 +2409,18 @@ balanced-match@^1.0.0:
     "@noir-lang/types" "0.34.0"
     fflate "^0.8.0"
 
+"barretenberg-v0.84.0@npm:@aztec/bb.js@0.84.0":
+  version "0.84.0"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.84.0.tgz#58ef86587160ff559d39bbc3068b1cd25ef91917"
+  integrity sha512-jNx35PCtevQnIBAyld90JjI+fGTrhcbXH6FkcZoRRpBPvnlZVTmIAU3j16q136m+mFgIBlCuzjOE6ND4cOgnQQ==
+  dependencies:
+    comlink "^4.4.1"
+    commander "^12.1.0"
+    debug "^4.3.4"
+    fflate "^0.8.0"
+    pako "^2.1.0"
+    tslib "^2.4.0"
+
 base64-js@^1.3.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
@@ -2694,6 +2723,11 @@ commander@^10.0.1:
   version "10.0.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-10.0.1.tgz#881ee46b4f77d1c1dccc5823433aa39b022cbe06"
   integrity sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==
+
+commander@^12.1.0:
+  version "12.1.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-12.1.0.tgz#01423b36f501259fdaac4d0e4d60c96c991585d3"
+  integrity sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==
 
 commander@^4.0.0:
   version "4.1.1"
@@ -4319,6 +4353,15 @@ node-releases@^2.0.14:
     "@noir-lang/acvm_js" "0.50.0"
     "@noir-lang/noirc_abi" "0.34.0"
     "@noir-lang/types" "0.34.0"
+
+"noir_js-v1.0.0-beta.3@npm:@noir-lang/noir_js@1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@noir-lang/noir_js/-/noir_js-1.0.0-beta.3.tgz#709afad05186df929c5e0f67bbdabd5d64ed0cc2"
+  integrity sha512-Nt/rP7zRMOfNq9urD8+GtRpYqEc0K10FoKXs/v+ZTbGaP6Jkm7+F+UPj2bkWy66k1HNzsN6ortli7c7mnLDHwA==
+  dependencies:
+    "@noir-lang/acvm_js" "1.0.0-beta.3"
+    "@noir-lang/noirc_abi" "1.0.0-beta.3"
+    "@noir-lang/types" "1.0.0-beta.3"
 
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"

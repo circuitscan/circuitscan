@@ -37,8 +37,12 @@ async function noirLoader(version) {
       noir = import('noir_js-v0.34.0');
       bb = import('barretenberg-v0.34.0');
       break;
+    case '1.0.0-beta.3':
+      noir = import('noir_js-v1.0.0-beta.3');
+      bb = import('barretenberg-v0.84.0');
+      break;
   }
-  if(!noir) throw new Error('Noir v0.31.0 - v0.34.0 only!');
+  if(!noir) throw new Error('Unsupported Noir version!');
   return { noir: await noir, bb: await bb };
 }
 
@@ -88,7 +92,7 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
       setPkeyData({ circuit, ...noirImports });
     } catch(error) {
       console.error(error);
-      toast.error(err);
+      toast.error(error.message);
     }
   }
 
@@ -111,7 +115,13 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
       const circuit = JSON.parse(pkeyData.circuit);
       const noir = new pkeyData.noir.Noir(circuit);
       const witness = await noir.execute(inputs);
-      const bb = new pkeyData.bb.BarretenbergBackend(circuit);
+      let bb;
+      if('BarretenbergBackend' in pkeyData.bb) {
+        // Old noir 0.31.0 - 0.34.0
+        bb = new pkeyData.bb.BarretenbergBackend(circuit);
+      } else {
+        bb = new pkeyData.bb.UltraHonkBackend(circuit.bytecode);
+      }
       proof = await bb.generateProof(witness.witness);
       proof.proofHex = '0x' + uint8ArrayToHexString(proof.proof);
       setProofOutput(proof);
@@ -134,18 +144,25 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
       args: [proof.proofHex, proof.publicInputs],
     });
 
-    const callResult = await publicClient.call({
-      data: funcData,
-      to: address,
-    });
-    const success = parseInt(callResult.data) > 0;
-    if(!success) {
+    try {
+      const callResult = await publicClient.call({
+        data: funcData,
+        to: address,
+      });
+      const success = parseInt(callResult.data) > 0;
+      if(!success) {
+        toast.dismiss();
+        toast.error('Proof inputs failed to verify');
+        return;
+      }
       toast.dismiss();
-      toast.error('Proof inputs failed to verify');
+      toast.success('Proof verified successfully!');
+    } catch(error) {
+      console.error(error);
+      toast.dismiss();
+      toast.error('Error attempting to verify proof!');
       return;
     }
-    toast.dismiss();
-    toast.success('Proof verified successfully!');
 
   }
   return (<>
