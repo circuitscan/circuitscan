@@ -79,6 +79,7 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
 
   async function downloadPkey() {
     try {
+      setProgress1([1,1000]);
       // Load snarkjs first to ensure it's a compatible version
       const snarkjs = await snarkjsLoader(info.snarkjsVersion);
       // Load simultaneously
@@ -93,6 +94,7 @@ export function ProofMaker({ info, pkgName, chainParam, address, template }) {
     } catch (error) {
       console.error(error);
       toast.error(error.message);
+      setProgress1([0,0]);
     }
   }
 

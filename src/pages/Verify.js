@@ -394,7 +394,8 @@ function ZipFileUploader({setCircuit, zipContents, setZipContents}) {
   const [circuits, setCircuits] = useState([]);
 
   const handleFileChange = async (file) => {
-    if (!file || file.type !== "application/zip") {
+    if (!file) {
+      console.log(file);
       toast.error("Please upload a valid ZIP file.");
       return;
     }

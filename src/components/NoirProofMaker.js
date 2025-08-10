@@ -41,6 +41,10 @@ async function noirLoader(version) {
       noir = import('noir_js-v1.0.0-beta.3');
       bb = import('barretenberg-v0.84.0');
       break;
+    case '1.0.0-beta.9':
+      noir = import('noir_js-v1.0.0-beta.9');
+      bb = import('barretenberg-v1.2.1');
+      break;
   }
   if(!noir) throw new Error('Unsupported Noir version!');
   return { noir: await noir, bb: await bb };
@@ -83,6 +87,7 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
 
   async function downloadPkey() {
     try {
+      setProgress1([1,1000]);
       const noirImports = await noirLoader(info.nargoVersion);
 
       const circuitPromise = loadListOrFile(`build/${pkgName}/pkg.zip`,
@@ -93,6 +98,7 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
     } catch(error) {
       console.error(error);
       toast.error(error.message);
+      setProgress1([0,0]);
     }
   }
 
@@ -123,6 +129,8 @@ export function NoirProofMaker({ info, pkgName, chainParam, address, mainArgs })
         bb = new pkeyData.bb.UltraHonkBackend(circuit.bytecode);
       }
       proof = await bb.generateProof(witness.witness);
+      const verified = await bb.verifyProof(proof);
+      console.log(verified);
       proof.proofHex = '0x' + uint8ArrayToHexString(proof.proof);
       setProofOutput(proof);
     } catch(error) {
