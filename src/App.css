@@ -54,3 +54,22 @@ code .token.operator {
 details[open]>summary>svg {
   transform: rotate(180deg);
 }
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<path fill='%230F172A' d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5em center;
+  background-size: 1.5em;
+}
+
+@media (prefers-color-scheme: dark) {
+select {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<path fill='%23ffffff' d='M7 10l5 5 5-5z'/></svg>");
+}
+}
