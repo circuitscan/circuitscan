@@ -63,6 +63,7 @@ export const Options = forwardRef(function({circuit, zipContents}, payloadRef) {
       }, {}),
       finalZkey: protocol === 'groth16' ? finalZKey || undefined : undefined,
       snarkjsVersion,
+      wasmWitness: true,
       circomPath: `circom-v${circomVersion}`,
       optimization,
       protocol,
