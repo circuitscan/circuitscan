@@ -55,7 +55,7 @@ export function Layout() {
           text-center font-bold
           block p-2
         `}>
-        Circuitscan is participating in Octant Epoch 8 from July 11-25! 🎉
+        Thanks for your support in Octant Epoch 8! 👊
       </a>
       <header className={`
         bg-neutral-50 dark:bg-neutral-900
