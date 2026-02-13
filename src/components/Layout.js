@@ -45,23 +45,15 @@ export function Layout() {
 
   return (<>
       <Toaster />
-      <a
-        href="https://octant.app/project/8/0xa48c718AE6dE6599c5A46Fd6caBff54Def39473a"
-        target="_blank"
-        rel="noopener"
+      <div
         className={`
           bg-lightaccent dark:bg-darkaccent
-          text-lightbg dark:text-darkbg
-          text-center font-bold
-          block p-2
-        `}>
-        Thanks for your support in Octant Epoch 8! 👊
-      </a>
+          block p-1
+        `}
+        />
       <header className={`
-        bg-neutral-50 dark:bg-neutral-900
-        border-b border-neutral-300 dark:border-neutral-600
-        shadow-xl shadow-neutral-200 dark:shadow-neutral-700
-        print:shadow-none
+        bg-neutral-100 dark:bg-neutral-900
+        border-b border-neutral-300 dark:border-neutral-700
       `}>
         <div id="logo" className={`
           px-3 py-2 sm:py-3
