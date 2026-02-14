@@ -12,6 +12,7 @@ import {clsButton, clsInput, clsIconA} from '../components/Layout.js';
 
 
 const SNARKJS_VERSIONS = [
+  '0.7.6',
   '0.7.5',
   '0.7.4',
   '0.7.3',
@@ -22,6 +23,7 @@ const SNARKJS_VERSIONS = [
 ];
 
 const CIRCOM_VERSIONS = [
+  '2.2.3',
   '2.2.2',
   '2.2.1',
   '2.2.0',
