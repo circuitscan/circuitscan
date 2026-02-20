@@ -74,7 +74,7 @@ export function Layout() {
           <div className="flex space-x-4 place-items-center print:hidden">
             <form onSubmit={handleSearch}>
               <input
-                className={`${clsInput} min-w-72 focus:min-w-80 transition-all`}
+                className={`${clsInput} min-w-12 sm:min-w-72 focus:min-w-80 transition-all`}
                 type="search"
                 value={searchAddress}
                 onChange={(e) => setSearchAddress(e.target.value)}

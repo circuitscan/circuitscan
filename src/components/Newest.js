@@ -58,7 +58,7 @@ export default function Newest() {
       <Card>
           <button
             onClick={() => setReloadCount(reloadCount + 1)}
-            className={`${clsIconA} flex float-right mt-8 leading-4`}
+            className={`${clsIconA} flex sm:float-right mt-8 leading-4`}
           >
             <ArrowPathIcon className="h-4 w-4 mr-1" />
             Refresh
@@ -73,7 +73,7 @@ export default function Newest() {
               `}>
                 <Link
                   className={`
-                    py-3 flex items-center justify-between
+                    py-3 flex items-start sm:items-center justify-between flex-col sm:flex-row
                     border-b border-neutral-300 dark:border-neutral-600
                     ${clsIconA}
                   `}
@@ -86,15 +86,15 @@ export default function Newest() {
                     text-sm
                   `}>{findChain(row.chain).name}</span>
                   <span className={`
-                    text-ellipsis inline-block overflow-hidden
+                    truncate overflow-hidden w-full
                     mr-1 grow
                   `}>
                     <span className="font-bold">
                       <VerifierDisplay pkgName={row.pkgName} />
                     </span>
-                    <span className="text-sm block">{row.address}</span>
+                    <span className="text-sm block truncate">{row.address}</span>
                   </span>
-                  <span className={`
+                  <span className={`italic
                   `}>{(new Date(row.createdAt * 1000)).toLocaleString()}</span>
                 </Link>
               </li>

@@ -20,7 +20,7 @@ export function Home() {
     <Helmet>
       <title>Circuitscan - Home</title>
     </Helmet>
-    <div className="flex flex-col lg:flex-row p-4 gap-4">
+    <div className="flex flex-col lg:flex-row sm:p-4 gap-4">
       <Card className="lg:basis-0 lg:flex-grow">
         <p className="py-3">
           Circuitscan provides the same safety guarantees to circuit verifier contracts as normal smart contracts receive by verifying their source code on a block explorer: guaranteed access to the application even if their frontend becomes unavailable as well as the ability to review the source code for potential issues.
